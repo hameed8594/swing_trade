@@ -24,9 +24,36 @@ try:
 except ImportError:
     _TZ_NY = None
 
-HERE          = Path(__file__).parent
-SNAPSHOT_CSV  = HERE / "snapshot_results.csv"
+HERE           = Path(__file__).parent
+SNAPSHOT_CSV   = HERE / "snapshot_results.csv"
 DASHBOARD_HTML = HERE / "../docs/swing.html"
+
+
+def load_snapshot_data():
+    """Load valuation data from snapshot CSV keyed by ticker."""
+    if not SNAPSHOT_CSV.exists():
+        return {}
+    df = pd.read_csv(SNAPSHOT_CSV)
+    out = {}
+    for _, row in df.iterrows():
+        ticker = row.get("tickerSymbol")
+        if not ticker:
+            continue
+        def _f(k):
+            v = row.get(k)
+            try:
+                return float(v) if (v is not None and not pd.isna(v)) else None
+            except (TypeError, ValueError):
+                return None
+        out[ticker] = {
+            "pe_ratio":           _f("trailingPE"),
+            "price_to_sales":     _f("priceToSales"),
+            "price_to_cash_flow": _f("priceToCashFlow"),
+            "price_to_fcf":       _f("priceToFreeCashFlow"),
+            "price_to_book":      _f("priceToBook"),
+            "div_yield":          _f("divYield"),
+        }
+    return out
 
 
 def adjust_volume_intraday(df):
@@ -216,6 +243,37 @@ def get_tickers():
     return sorted(df["tickerSymbol"].dropna().unique().tolist())
 
 
+def sepa_check(score, vcp, fundamentals, rs_rank, checks):
+    """
+    Evaluate Minervini SEPA criteria.
+
+    Returns (sepa_checks dict, sepa_qualified bool, sepa_pass bool).
+      sepa_qualified = E + P criteria met (watchlist-ready, waiting for VCP)
+      sepa_pass      = sepa_qualified + VCP detected (full actionable setup)
+    Announcement (A) cannot be automated and is excluded.
+    """
+    eps  = fundamentals.get("eps_growth")
+    rev  = fundamentals.get("revenue_growth")
+    inst = fundamentals.get("institutional_pct")
+
+    sepa_checks = {
+        "stage2_trend":         score >= 7,
+        "eps_growth_20pct":     eps is not None and eps >= 20,
+        "revenue_growth_15pct": rev is not None and rev >= 15,
+        "rs_rank_70plus":       rs_rank is not None and rs_rank >= 70,
+        "within_25pct_52w_high": checks.get("price_within_25pct_of_52w_high", False),
+        "vcp_detected":         bool(vcp.get("detected")),
+        "inst_ownership_ok":    inst is not None and 30 <= inst <= 70,
+    }
+
+    core = ["stage2_trend", "eps_growth_20pct", "revenue_growth_15pct",
+            "rs_rank_70plus", "within_25pct_52w_high"]
+    sepa_qualified = all(sepa_checks[k] for k in core)
+    sepa_pass      = sepa_qualified and sepa_checks["vcp_detected"]
+
+    return sepa_checks, sepa_qualified, sepa_pass
+
+
 def check_trend_template(close):
     if len(close) < 210:
         return None, 0, {}
@@ -330,7 +388,7 @@ def pct_fmt(v):
     return round(float(v) * 100, 1) if v is not None else None
 
 
-def analyze_ticker(ticker, spy_perf):
+def analyze_ticker(ticker, spy_perf, snap=None):
     try:
         tk = yf.Ticker(ticker)
         df = tk.history(period="2y", auto_adjust=True)
@@ -385,21 +443,35 @@ def analyze_ticker(ticker, spy_perf):
 
         company_name = info.get("longName") or info.get("shortName") or ticker
 
+        snap = snap or {}
+        inst_raw = info.get("heldPercentInstitutions")
+        inst_pct = round(float(inst_raw) * 100, 1) if inst_raw else None
+
         fundamentals = {
-            "eps_growth":     pct_fmt(info.get("earningsGrowth")),
-            "revenue_growth": pct_fmt(info.get("revenueGrowth")),
-            "roe":            pct_fmt(info.get("returnOnEquity")),
-            "profit_margin":  pct_fmt(info.get("profitMargins")),
-            "trailing_eps":   info.get("trailingEps"),
-            "forward_eps":    info.get("forwardEps"),
-            "pe_ratio":       info.get("trailingPE"),
-            "forward_pe":     info.get("forwardPE"),
-            "sector":         info.get("sector"),
-            "industry":       info.get("industry"),
+            # Growth from Yahoo (best available source for these)
+            "eps_growth":         pct_fmt(info.get("earningsGrowth")),
+            "revenue_growth":     pct_fmt(info.get("revenueGrowth")),
+            "roe":                pct_fmt(info.get("returnOnEquity")),
+            "profit_margin":      pct_fmt(info.get("profitMargins")),
+            "trailing_eps":       info.get("trailingEps"),
+            "forward_eps":        info.get("forwardEps"),
+            "forward_pe":         info.get("forwardPE"),
+            # Valuation multiples: prefer snapshot CSV (more reliable than Yahoo info)
+            "pe_ratio":           snap.get("pe_ratio") or info.get("trailingPE"),
+            "price_to_sales":     snap.get("price_to_sales"),
+            "price_to_cash_flow": snap.get("price_to_cash_flow"),
+            "price_to_fcf":       snap.get("price_to_fcf"),
+            "price_to_book":      snap.get("price_to_book"),
+            "div_yield":          snap.get("div_yield"),
+            # Institutional ownership from Yahoo
+            "institutional_pct":  inst_pct,
+            "sector":             info.get("sector"),
+            "industry":           info.get("industry"),
         }
 
         analysis = compute_swing_analysis(score, vcp, price, ma_vals["ma50"])
 
+        # SEPA check runs after rs_rank is assigned in main(); placeholder None here
         return {
             "ticker":            ticker,
             "company_name":      company_name,
@@ -420,6 +492,9 @@ def analyze_ticker(ticker, spy_perf):
             "fundamentals":      fundamentals,
             "history":           history,
             "analysis":          analysis,
+            "sepa_checks":       None,
+            "sepa_qualified":    False,
+            "sepa_pass":         False,
             "comments":          "",
         }
     except Exception as e:
@@ -435,6 +510,9 @@ def inject(data, html_path):
 
 
 def main():
+    snapshot_data = load_snapshot_data()
+    print(f"Snapshot data loaded: {len(snapshot_data)} tickers")
+
     tickers = get_tickers()
     print(f"Tickers loaded: {len(tickers)}")
 
@@ -445,10 +523,11 @@ def main():
     results = []
     for i, ticker in enumerate(tickers, 1):
         print(f"[{i}/{len(tickers)}] {ticker}")
-        result = analyze_ticker(ticker, spy_perf)
+        result = analyze_ticker(ticker, spy_perf, snap=snapshot_data.get(ticker))
         if result:
             results.append(result)
 
+    # Assign RS ranks first — sepa_check needs them
     raw_vals = [r["rs_raw"] for r in results if r["rs_raw"] is not None]
     for r in results:
         if r["rs_raw"] is not None:
@@ -456,13 +535,23 @@ def main():
                 sum(1 for v in raw_vals if v <= r["rs_raw"]) / len(raw_vals) * 100
             )
 
+    # Run SEPA checks now that rs_rank is populated
+    for r in results:
+        sc, sq, sp = sepa_check(r["score"], r["vcp"], r["fundamentals"],
+                                r["rs_rank"], r["checks"])
+        r["sepa_checks"]    = sc
+        r["sepa_qualified"] = sq
+        r["sepa_pass"]      = sp
+
     for r in results:
         r["comments"] = generate_comments(r)
 
-    results.sort(key=lambda x: (x["score"], x["vcp"]["detected"]), reverse=True)
+    results.sort(key=lambda x: (x["sepa_pass"], x["sepa_qualified"],
+                                x["score"], x["vcp"]["detected"]), reverse=True)
 
     stage2_count = sum(1 for r in results if r["score"] >= 7)
     vcp_count    = sum(1 for r in results if r["vcp"]["detected"])
+    sepa_count   = sum(1 for r in results if r["sepa_pass"])
 
     if _TZ_NY:
         generated_at = datetime.now(_TZ_NY).strftime("%Y-%m-%d %H:%M ET")
@@ -475,6 +564,7 @@ def main():
         "total_results": len(results),
         "stage2_count":  stage2_count,
         "vcp_count":     vcp_count,
+        "sepa_count":    sepa_count,
         "stocks":        results,
     }
 
@@ -483,6 +573,7 @@ def main():
     print(f"\nDone — {len(results)}/{len(tickers)} stocks scanned")
     print(f"Stage 2 (≥7/8):   {stage2_count}")
     print(f"VCP setups:        {vcp_count}")
+    print(f"SEPA passes:       {sepa_count}")
     print(f"Injected into:     {DASHBOARD_HTML.resolve()}")
 
 
