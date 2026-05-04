@@ -175,11 +175,6 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 .rs-mid    { color: var(--amber); font-weight: 600; }
 .rs-low    { color: var(--text3); }
 
-/* 52w bar */
-.bar-wrap  { display: flex; flex-direction: column; gap: 4px; min-width: 90px; }
-.bar-track { height: 5px; border-radius: 3px; background: var(--border2); }
-.bar-fill  { height: 100%; border-radius: 3px; background: var(--gold); }
-.bar-label { font-size: 10px; color: var(--text3); }
 
 .empty-state { padding: 48px; text-align: center; color: var(--text3); font-size: 14px; }
 
@@ -449,7 +444,7 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
           <th data-col="avg_vol_50">Avg Vol 50D <span class="sort-arrow">↕</span></th>
           <th data-col="current_vol_adj">Vol Today <span class="sort-arrow">↕</span></th>
           <th data-col="rs_rank">RS Rank <span class="sort-arrow">↕</span></th>
-          <th data-col="pos52w">52W Position <span class="sort-arrow">↕</span></th>
+          <th data-col="vol_pct">Vol vs Avg <span class="sort-arrow">↕</span></th>
         </tr>
       </thead>
       <tbody id="table-body">
@@ -602,7 +597,7 @@ function getSortVal(s, col) {
     case "avg_vol_50":      return s.avg_vol_50 ?? null;
     case "current_vol_adj": return s.current_vol_adj ?? null;
     case "rs_rank":        return s.rs_rank;
-    case "pos52w":         return pos52w(s);
+    case "vol_pct":        return volPct(s);
     default:               return 0;
   }
 }
@@ -612,9 +607,9 @@ function riskPct(s) {
   return (s.price - s.vcp.stop_loss) / s.price * 100;
 }
 
-function pos52w(s) {
-  const range = (s.high_52w ?? 0) - (s.low_52w ?? 0);
-  return range > 0 ? (s.price - s.low_52w) / range * 100 : null;
+function volPct(s) {
+  if (!s.avg_vol_50 || !s.current_vol_adj) return null;
+  return (s.current_vol_adj - s.avg_vol_50) / s.avg_vol_50 * 100;
 }
 
 function render() {
@@ -662,7 +657,7 @@ function rowHtml(s) {
   const vcp     = s.vcp || {};
   const rsR     = s.rs_rank;
   const rsCls   = rsR === null ? "" : rsR >= 80 ? "rs-high" : rsR >= 60 ? "rs-mid" : "rs-low";
-  const pos     = pos52w(s);
+  const vp      = volPct(s);
 
   return `<tr data-ticker="${s.ticker}">
     <td><div class="ticker-cell">
@@ -685,8 +680,8 @@ function rowHtml(s) {
     <td>${fmtVol(s.avg_vol_50)}</td>
     <td>${fmtVol(s.current_vol_adj)}</td>
     <td>${rsR !== null ? `<span class="${rsCls}">${rsR}</span>` : "—"}</td>
-    <td>${pos !== null
-      ? `<div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,pos).toFixed(0)}%"></div></div><div class="bar-label">${fmt(pos,0)}% of range</div></div>`
+    <td>${vp !== null
+      ? `<span class="${vp >= 40 ? "rs-high" : vp >= 0 ? "rs-mid" : "rs-low"}">${vp > 0 ? "+" : ""}${fmt(vp, 0)}%</span>`
       : "—"}</td>
   </tr>`;
 }
