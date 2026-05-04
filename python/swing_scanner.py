@@ -26,7 +26,7 @@ except ImportError:
 
 HERE          = Path(__file__).parent
 SNAPSHOT_CSV  = HERE / "snapshot_results.csv"
-DASHBOARD_HTML = HERE / "../dev/swing.html"
+DASHBOARD_HTML = HERE / "../docs/swing.html"
 
 
 def adjust_volume_intraday(df):
