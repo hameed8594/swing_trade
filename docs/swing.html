@@ -446,15 +446,14 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
           <th data-col="stage">Stage <span class="sort-arrow">↕</span></th>
           <th data-col="vcp">VCP <span class="sort-arrow">↕</span></th>
           <th data-col="pivot">Pivot <span class="sort-arrow">↕</span></th>
-          <th data-col="pct_from_pivot">% Away <span class="sort-arrow">↕</span></th>
-          <th data-col="stop">Stop Loss <span class="sort-arrow">↕</span></th>
-          <th data-col="risk">Risk % <span class="sort-arrow">↕</span></th>
+          <th data-col="avg_vol_50">Avg Vol 50D <span class="sort-arrow">↕</span></th>
+          <th data-col="current_vol_adj">Vol Today <span class="sort-arrow">↕</span></th>
           <th data-col="rs_rank">RS Rank <span class="sort-arrow">↕</span></th>
           <th data-col="pos52w">52W Position <span class="sort-arrow">↕</span></th>
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr><td colspan="12" class="empty-state">Run <strong>python3 swing_scanner.py</strong> to load data.</td></tr>
+        <tr><td colspan="11" class="empty-state">Run <strong>python3 swing_scanner.py</strong> to load data.</td></tr>
       </tbody>
     </table>
   </div>
@@ -600,9 +599,8 @@ function getSortVal(s, col) {
     case "stage":          return s.score;
     case "vcp":            return vcp.detected ? 1 : 0;
     case "pivot":          return vcp.pivot_price ?? null;
-    case "pct_from_pivot": return vcp.pct_from_pivot ?? null;
-    case "stop":           return vcp.stop_loss ?? null;
-    case "risk":           return riskPct(s);
+    case "avg_vol_50":      return s.avg_vol_50 ?? null;
+    case "current_vol_adj": return s.current_vol_adj ?? null;
     case "rs_rank":        return s.rs_rank;
     case "pos52w":         return pos52w(s);
     default:               return 0;
@@ -623,7 +621,7 @@ function render() {
   const arr   = sortedStocks(filteredStocks());
   const tbody = document.getElementById("table-body");
   if (arr.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="12" class="empty-state">No stocks match this filter.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="empty-state">No stocks match this filter.</td></tr>`;
     return;
   }
   tbody.innerHTML = arr.map(rowHtml).join("");
@@ -634,6 +632,14 @@ function render() {
 
 function fmt(v, d = 2) {
   return (v === null || v === undefined || isNaN(v)) ? "—" : Number(v).toFixed(d);
+}
+
+function fmtVol(v) {
+  if (v === null || v === undefined) return "—";
+  if (v >= 1e9) return (v / 1e9).toFixed(1) + "B";
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + "M";
+  if (v >= 1e3) return (v / 1e3).toFixed(0) + "K";
+  return v.toString();
 }
 
 function dotsHtml(checks) {
@@ -654,11 +660,8 @@ function rowHtml(s) {
   const score   = s.score ?? 0;
   const scls    = score === 8 ? "s8" : score === 7 ? "s7" : score === 6 ? "s6" : "slow";
   const vcp     = s.vcp || {};
-  const pctAway = vcp.pct_from_pivot ?? null;
-  const pctCls  = pctAway === null ? "" : pctAway <= 3 ? "pct-close" : pctAway <= 7 ? "pct-mid" : "pct-far";
   const rsR     = s.rs_rank;
   const rsCls   = rsR === null ? "" : rsR >= 80 ? "rs-high" : rsR >= 60 ? "rs-mid" : "rs-low";
-  const risk    = riskPct(s);
   const pos     = pos52w(s);
 
   return `<tr data-ticker="${s.ticker}">
@@ -679,9 +682,8 @@ function rowHtml(s) {
       ? `<span class="badge ${vcp.volume_dry ? "badge-vcp-vol" : "badge-vcp"}">VCP ${vcp.contractions ?? ""}${vcp.volume_dry ? " ▾vol" : ""}</span>`
       : `<span class="badge badge-dim">—</span>`}</td>
     <td>${vcp.detected ? `$${fmt(vcp.pivot_price)}` : "—"}</td>
-    <td>${pctAway !== null ? `<span class="${pctCls}">${fmt(pctAway, 1)}%</span>` : "—"}</td>
-    <td>${vcp.detected ? `$${fmt(vcp.stop_loss)}` : "—"}</td>
-    <td>${risk !== null ? `<span style="color:var(--red);font-weight:600">${fmt(risk, 1)}%</span>` : "—"}</td>
+    <td>${fmtVol(s.avg_vol_50)}</td>
+    <td>${fmtVol(s.current_vol_adj)}</td>
     <td>${rsR !== null ? `<span class="${rsCls}">${rsR}</span>` : "—"}</td>
     <td>${pos !== null
       ? `<div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,pos).toFixed(0)}%"></div></div><div class="bar-label">${fmt(pos,0)}% of range</div></div>`

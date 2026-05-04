@@ -2,8 +2,22 @@ name: Update Swing Dashboard
 
 on:
   schedule:
-    # 9:50 AM Eastern (EDT = UTC-4) → 13:50 UTC, weekdays only
-    - cron: '50 13 * * 1-5'
+    # 15 equally-spaced runs between 9:30 AM and 4:00 PM Eastern (EDT = UTC-4), weekdays only
+    - cron: '30 13 * * 1-5'  #  9:30 AM ET
+    - cron: '58 13 * * 1-5'  #  9:58 AM ET
+    - cron: '26 14 * * 1-5'  # 10:26 AM ET
+    - cron: '54 14 * * 1-5'  # 10:54 AM ET
+    - cron: '21 15 * * 1-5'  # 11:21 AM ET
+    - cron: '49 15 * * 1-5'  # 11:49 AM ET
+    - cron: '17 16 * * 1-5'  # 12:17 PM ET
+    - cron: '45 16 * * 1-5'  # 12:45 PM ET
+    - cron: '13 17 * * 1-5'  #  1:13 PM ET
+    - cron: '41 17 * * 1-5'  #  1:41 PM ET
+    - cron: '9 18 * * 1-5'   #  2:09 PM ET
+    - cron: '36 18 * * 1-5'  #  2:36 PM ET
+    - cron: '4 19 * * 1-5'   #  3:04 PM ET
+    - cron: '32 19 * * 1-5'  #  3:32 PM ET
+    - cron: '0 20 * * 1-5'   #  4:00 PM ET
   workflow_dispatch:  # allows manual trigger from GitHub UI
 
 jobs:
@@ -33,6 +47,6 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dev/swing.html
+          git add docs/swing.html
           git diff --cached --quiet || git commit -m "chore: update swing dashboard $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push

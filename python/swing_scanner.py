@@ -338,7 +338,19 @@ def analyze_ticker(ticker, spy_perf):
             return None
 
         df.index = df.index.tz_localize(None) if df.index.tz else df.index
+
+        # Compute 50-day avg volume from complete trading days only
+        raw_vol = df["Volume"]
+        last_bar_date = df.index[-1].date()
+        today_date = datetime.now().date()
+        if last_bar_date == today_date:
+            prior_vols = raw_vol.iloc[:-1]
+        else:
+            prior_vols = raw_vol
+        avg_vol_50 = int(prior_vols.tail(50).mean()) if len(prior_vols) >= 10 else None
+
         df = adjust_volume_intraday(df)
+        current_vol_adj = int(df["Volume"].iloc[-1])
         close = df["Close"]
         price = float(close.iloc[-1])
 
@@ -392,6 +404,8 @@ def analyze_ticker(ticker, spy_perf):
             "ticker":            ticker,
             "company_name":      company_name,
             "price":             round(price, 2),
+            "avg_vol_50":        avg_vol_50,
+            "current_vol_adj":   current_vol_adj,
             "score":             score,
             "checks":            checks,
             "vcp":               vcp,
@@ -450,8 +464,13 @@ def main():
     stage2_count = sum(1 for r in results if r["score"] >= 7)
     vcp_count    = sum(1 for r in results if r["vcp"]["detected"])
 
+    if _TZ_NY:
+        generated_at = datetime.now(_TZ_NY).strftime("%Y-%m-%d %H:%M ET")
+    else:
+        generated_at = datetime.now().strftime("%Y-%m-%d %H:%M UTC")
+
     payload = {
-        "generated_at":  datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "generated_at":  generated_at,
         "total_scanned": len(tickers),
         "total_results": len(results),
         "stage2_count":  stage2_count,
