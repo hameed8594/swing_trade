@@ -1,0 +1,38 @@
+name: Update Swing Dashboard
+
+on:
+  schedule:
+    # 9:50 AM Eastern (EDT = UTC-4) → 13:50 UTC, weekdays only
+    - cron: '50 13 * * 1-5'
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # needed to push the updated swing.html back
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run swing scanner
+        run: python python/swing_scanner.py
+
+      - name: Commit updated dashboard
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dev/swing.html
+          git diff --cached --quiet || git commit -m "chore: update swing dashboard $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push

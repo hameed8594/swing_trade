@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Large data / screenshots (stay local)
+snapshot/
+factsheet/
+python/price_history.json
+results.csv
