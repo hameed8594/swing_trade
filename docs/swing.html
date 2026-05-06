@@ -126,6 +126,7 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 .ticker-cell { display: flex; flex-direction: column; gap: 2px; }
 .ticker-sym  { font-size: 14px; font-weight: 700; color: var(--gold); letter-spacing: 0.04em; transition: color 0.12s; }
 .ticker-co   { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.growth-star { color: var(--gold); font-size: 11px; margin-left: 4px; opacity: 0.9; }
 .price-val   { font-weight: 600; }
 
 /* Score dots */
@@ -671,7 +672,7 @@ function rowHtml(s) {
 
   return `<tr data-ticker="${s.ticker}">
     <td><div class="ticker-cell">
-      <div class="ticker-sym">${s.ticker}</div>
+      <div class="ticker-sym">${s.ticker}${s.growth_company ? '<span class="growth-star" title="Growth Company">★</span>' : ''}</div>
       <div class="ticker-co">${s.company_name || ""}</div>
     </div></td>
     <td><span class="price-val">$${fmt(s.price)}</span></td>

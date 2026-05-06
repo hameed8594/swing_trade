@@ -26,6 +26,7 @@ except ImportError:
 
 HERE           = Path(__file__).parent
 SNAPSHOT_CSV   = HERE / "snapshot_results.csv"
+STOCK_LIST     = HERE / "../Stock List.xlsx"
 DASHBOARD_HTML = HERE / "../docs/swing.html"
 
 
@@ -238,7 +239,21 @@ def generate_comments(s):
     return " ".join(lines)
 
 
-def get_tickers():
+def load_stock_list():
+    """Read Stock List.xlsx and return (all_stocks_set, growth_set)."""
+    if not STOCK_LIST.exists():
+        print(f"Warning: {STOCK_LIST} not found — scanning all tickers from snapshot CSV")
+        return None, set()
+    df = pd.read_excel(STOCK_LIST, engine="openpyxl")
+    df.columns = [c.strip() for c in df.columns]
+    all_stocks = set(df.loc[df["ALL STOCKS"] == "Y", "TICKER"].dropna().str.strip())
+    growth     = set(df.loc[df["GROWTH COMPANIES"] == "Y", "TICKER"].dropna().str.strip())
+    return all_stocks, growth
+
+
+def get_tickers(all_stocks_filter=None):
+    if all_stocks_filter is not None:
+        return sorted(all_stocks_filter)
     df = pd.read_csv(SNAPSHOT_CSV)
     return sorted(df["tickerSymbol"].dropna().unique().tolist())
 
@@ -513,8 +528,9 @@ def main():
     snapshot_data = load_snapshot_data()
     print(f"Snapshot data loaded: {len(snapshot_data)} tickers")
 
-    tickers = get_tickers()
-    print(f"Tickers loaded: {len(tickers)}")
+    all_stocks_filter, growth_set = load_stock_list()
+    tickers = get_tickers(all_stocks_filter)
+    print(f"Tickers loaded: {len(tickers)} (from Stock List)")
 
     print("Fetching SPY benchmark...")
     spy_df   = yf.Ticker("SPY").history(period="2y", auto_adjust=True)
@@ -526,6 +542,10 @@ def main():
         result = analyze_ticker(ticker, spy_perf, snap=snapshot_data.get(ticker))
         if result:
             results.append(result)
+
+    # Tag growth companies
+    for r in results:
+        r["growth_company"] = r["ticker"] in growth_set
 
     # Assign RS ranks first — sepa_check needs them
     raw_vals = [r["rs_raw"] for r in results if r["rs_raw"] is not None]
