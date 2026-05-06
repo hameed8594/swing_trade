@@ -613,6 +613,11 @@ function getSortVal(s, col) {
   }
 }
 
+function pos52w(s) {
+  if (!s.high_52w || !s.low_52w || s.high_52w === s.low_52w) return null;
+  return (s.price - s.low_52w) / (s.high_52w - s.low_52w) * 100;
+}
+
 function riskPct(s) {
   if (!s.vcp || !s.vcp.stop_loss || !s.price) return null;
   return (s.price - s.vcp.stop_loss) / s.price * 100;
