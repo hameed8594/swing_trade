@@ -766,6 +766,7 @@ main { max-width: 1440px; margin: 0 auto; padding: 32px 36px 60px; }
     <div class="ov-title">All Stocks</div>
     <button class="ov-filter-btn" id="trendFilterBtn" onclick="toggleTrendFilter()">↑ All Trending Up</button>
     <button class="ov-filter-btn" id="growthFilterBtn" onclick="toggleGrowthFilter()">★ Growth Stocks</button>
+    <button class="ov-filter-btn" id="accelFilterBtn" onclick="toggleAccelFilter()">⬆ Accelerating</button>
   </div>
   <div class="ov-wrap">
     <table class="ov-table" id="ovTable">
@@ -1842,6 +1843,9 @@ const OV_COLS = [
   { key: 'epsMom',      label: 'EPS Mom 2Q',       type: 'trend' },
   { key: 'revTrend',    label: 'Rev Trend 3Y',     type: 'trend' },
   { key: 'revMom',      label: 'Rev Mom 2Q',       type: 'trend' },
+  { key: 'epsAnnScore', label: 'EPS 3Y Score',     type: 'score' },
+  { key: 'epsQoqScore', label: 'EPS QoQ Score',    type: 'score' },
+  { key: 'revAnnScore', label: 'Rev 3Y Score',     type: 'score' },
 ];
 
 const TREND_ORDER = { '↑': 3, '→': 2, '↓': 1 };
@@ -1883,6 +1887,13 @@ function toggleGrowthFilter() {
   renderOverview();
 }
 
+let accelFilterActive = false;
+function toggleAccelFilter() {
+  accelFilterActive = !accelFilterActive;
+  document.getElementById('accelFilterBtn').classList.toggle('active', accelFilterActive);
+  renderOverview();
+}
+
 function buildOvRows() {
   return Object.values(DATA).map(d => {
     const sc  = canslimScore(d);
@@ -1910,10 +1921,13 @@ function buildOvRows() {
       row[`revQoyLabel${i+1}`] = qtrRev[i]?.period ?? null;
     }
 
-    row.epsTrend = trendDir(annEps.map(x => x.v));
-    row.epsMom   = trendDir(qtrEps.slice(-2).map(x => x.yoy));
-    row.revTrend = trendDir(annRev.map(x => x.v));
-    row.revMom   = trendDir(qtrRev.slice(-2).map(x => x.yoy));
+    row.epsTrend    = trendDir(annEps.map(x => x.v));
+    row.epsMom      = trendDir(qtrEps.slice(-2).map(x => x.yoy));
+    row.revTrend    = trendDir(annRev.map(x => x.v));
+    row.revMom      = trendDir(qtrRev.slice(-2).map(x => x.yoy));
+    row.epsAnnScore = growthScore(row.epsYoy1, row.epsYoy2, row.epsYoy3);
+    row.epsQoqScore = growthScore(row.epsQoy1, row.epsQoy2, row.epsQoy3);
+    row.revAnnScore = growthScore(row.revYoy1, row.revYoy2, row.revYoy3);
 
     return row;
   });
@@ -1933,6 +1947,18 @@ function sortRows(rows) {
   });
 }
 
+function growthScore(v1, v2, v3) {
+  // +2 per positive year, +2 per acceleration step. Max = 10.
+  if (v1 == null && v2 == null && v3 == null) return null;
+  let s = 0;
+  if (v1 != null && v1 > 0) s += 2;
+  if (v2 != null && v2 > 0) s += 2;
+  if (v3 != null && v3 > 0) s += 2;
+  if (v1 != null && v2 != null && v2 > v1) s += 2;
+  if (v2 != null && v3 != null && v3 > v2) s += 2;
+  return Math.min(10, s);
+}
+
 function renderOverview() {
   let rows = buildOvRows();
   if (trendFilterActive) {
@@ -1940,6 +1966,9 @@ function renderOverview() {
   }
   if (growthFilterActive) {
     rows = rows.filter(r => r.growth === true);
+  }
+  if (accelFilterActive) {
+    rows = rows.filter(r => (r.epsAnnScore ?? 0) >= 7 && (r.revAnnScore ?? 0) >= 7);
   }
   rows = sortRows(rows);
 
@@ -1962,6 +1991,12 @@ function renderOverview() {
   // Body
   const body = document.getElementById('ovBody');
   body.innerHTML = rows.map(r => {
+    const score = v => {
+      if (v == null) return '<span class="ov-na">—</span>';
+      const cls = v >= 9 ? 'ov-pos' : v >= 7 ? 'ov-pos' : v >= 5 ? 'ov-flat' : 'ov-neg';
+      const style = v >= 9 ? 'color:#3DAD72;font-weight:700' : v >= 7 ? 'color:#E5C455;font-weight:600' : v >= 5 ? 'color:#B8A878' : 'color:#7A6A50';
+      return `<span style="${style}">${v}/10</span>`;
+    };
     const pct = (v, label) => {
       if (v == null) return '<span class="ov-na">—</span>';
       const cls = v > 0 ? 'ov-pos' : v < 0 ? 'ov-neg' : 'ov-flat';
@@ -1998,6 +2033,9 @@ function renderOverview() {
       <td>${trend(r.epsMom)}</td>
       <td>${trend(r.revTrend)}</td>
       <td>${trend(r.revMom)}</td>
+      <td>${score(r.epsAnnScore)}</td>
+      <td>${score(r.epsQoqScore)}</td>
+      <td>${score(r.revAnnScore)}</td>
     </tr>`;
   }).join('');
 }
