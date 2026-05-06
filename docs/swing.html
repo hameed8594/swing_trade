@@ -429,12 +429,8 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
   </div>
 
   <div class="filter-bar">
-    <button class="filter-btn active" data-filter="all">All</button>
-    <button class="filter-btn" data-filter="ready">Ready</button>
-    <button class="filter-btn" data-filter="watch">Watch</button>
-    <button class="filter-btn" data-filter="developing">Developing</button>
-    <button class="filter-btn" data-filter="notready">Not Ready</button>
-    <button class="filter-btn" data-filter="extended">Extended</button>
+    <button class="filter-btn active" data-filter="all">All Stocks</button>
+    <button class="filter-btn" data-filter="ready">Ready to Trade</button>
   </div>
 
   <div class="table-wrap">
@@ -579,8 +575,9 @@ function readinessLabel(s) {
 function filteredStocks() {
   return stocks.filter(s => {
     if (currentFilter === "all") return true;
-    const r = readinessLabel(s);
-    return r.label.toLowerCase().replace(" ", "") === currentFilter;
+    // "Ready to Trade" = has a buy signal or swing_score >= 7
+    const ss = s.analysis?.swing_score ?? 0;
+    return (s.analysis?.buy_signal === "Yes") || ss >= 7;
   });
 }
 
@@ -682,10 +679,7 @@ function rowHtml(s) {
     </div></td>
     <td><span class="price-val">$${fmt(s.price)}</span></td>
     <td>${(() => { const r = readinessLabel(s); return `<span class="badge ${r.cls}">${r.label}</span>`; })()}</td>
-    <td><div class="score-wrap">
-      <span class="score-num ${scls}">${score}/8</span>
-      ${dotsHtml(s.checks)}
-    </div></td>
+    <td><span class="score-num ${scls}" style="font-size:15px">${score}/8</span></td>
     <td>${score >= 7
       ? `<span class="badge badge-stage2">Stage 2</span>`
       : `<span class="badge badge-dim">${score}/8</span>`}</td>
