@@ -765,6 +765,7 @@ main { max-width: 1440px; margin: 0 auto; padding: 32px 36px 60px; }
   <div class="ov-toolbar">
     <div class="ov-title">All Stocks</div>
     <button class="ov-filter-btn" id="trendFilterBtn" onclick="toggleTrendFilter()">↑ All Trending Up</button>
+    <button class="ov-filter-btn" id="growthFilterBtn" onclick="toggleGrowthFilter()">★ Growth Stocks</button>
   </div>
   <div class="ov-wrap">
     <table class="ov-table" id="ovTable">
@@ -1820,6 +1821,7 @@ if (first) selectTicker(first);
 const OV_COLS = [
   { key: 'ticker',      label: 'Ticker',          type: 'str'   },
   { key: 'company',     label: 'Company',          type: 'str'   },
+  { key: 'growth',      label: '★ Growth',         type: 'bool'  },
   { key: 'overall',     label: 'Overall Score',    type: 'num'   },
   { key: 'score',       label: "O'Neil Score",     type: 'num'   },
   { key: 'lynchScore',  label: 'Lynch Score',      type: 'num'   },
@@ -1874,13 +1876,20 @@ function toggleTrendFilter() {
   renderOverview();
 }
 
+let growthFilterActive = false;
+function toggleGrowthFilter() {
+  growthFilterActive = !growthFilterActive;
+  document.getElementById('growthFilterBtn').classList.toggle('active', growthFilterActive);
+  renderOverview();
+}
+
 function buildOvRows() {
   return Object.values(DATA).map(d => {
     const sc  = canslimScore(d);
     const lc  = lynchScore(d);
     const ann = d.annual;
     const qtr = d.quarterly;
-    const row = { ticker: d.ticker, company: d.company, overall: overallScore(d), score: sc.score, lynchScore: lc.score, jitta: d.jittaScore };
+    const row = { ticker: d.ticker, company: d.company, growth: GROWTH_STOCKS.has(d.ticker), overall: overallScore(d), score: sc.score, lynchScore: lc.score, jitta: d.jittaScore };
 
     // Annual EPS & Rev YoY — last 3 non-null entries
     const annEps = ann ? ann.epsYoy.map((v,i) => v != null ? { p: ann.periods[i], v } : null).filter(Boolean).slice(-3) : [];
@@ -1929,6 +1938,9 @@ function renderOverview() {
   if (trendFilterActive) {
     rows = rows.filter(r => r.epsTrend === '↑' && r.epsMom === '↑' && r.revTrend === '↑' && r.revMom === '↑');
   }
+  if (growthFilterActive) {
+    rows = rows.filter(r => r.growth === true);
+  }
   rows = sortRows(rows);
 
   // Header
@@ -1965,6 +1977,7 @@ function renderOverview() {
     return `<tr>
       <td><span class="ov-ticker">${r.ticker}</span></td>
       <td><span class="ov-company">${r.company}</span></td>
+      <td style="text-align:center">${r.growth ? '<span style="color:#C9A84C;font-size:15px">★</span>' : '<span class="ov-na">—</span>'}</td>
       <td><span class="ov-overall">${r.overall != null ? r.overall.toFixed(2) : '<span class="ov-na">—</span>'}</span></td>
       <td><span class="ov-score">${r.score != null ? r.score.toFixed(2) : '<span class="ov-na">—</span>'}</span></td>
       <td><span class="ov-score">${r.lynchScore != null ? r.lynchScore.toFixed(2) : '<span class="ov-na">—</span>'}</span></td>
