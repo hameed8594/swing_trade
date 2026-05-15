@@ -1897,6 +1897,13 @@ const OV_COLS = [
   { key: 'epsMom',      label: 'EPS Mom 2Q',       type: 'trend' },
   { key: 'revTrend',    label: 'Rev Trend 3Y',     type: 'trend' },
   { key: 'revMom',      label: 'Rev Mom 2Q',       type: 'trend' },
+  { key: 'kpiMktCap',   label: 'Mkt Cap',          type: 'kpi'   },
+  { key: 'kpiPE',       label: 'P/E',              type: 'kpi'   },
+  { key: 'kpiPS',       label: 'P/S',              type: 'kpi'   },
+  { key: 'kpiROE',      label: 'ROE %',            type: 'kpi'   },
+  { key: 'kpiPFCF',     label: 'P/FCF',            type: 'kpi'   },
+  { key: 'kpiNPM',      label: 'Net Margin',       type: 'kpi'   },
+  { key: 'kpiEPSGr',    label: '3yr EPS Gr',       type: 'kpi'   },
 ];
 
 const TREND_ORDER = { '↑': 3, '→': 2, '↓': 1 };
@@ -1970,6 +1977,21 @@ function buildOvRows() {
     row.revTrend = trendDir(annRev.map(x => x.v));
     row.revMom   = trendDir(qtrRev.slice(-2).map(x => x.yoy));
 
+    // KPI columns
+    const lastRoe = ann ? (ann.returnOnEquity.filter(v => v != null).slice(-1)[0] ?? null) : null;
+    const lastNpm = ann ? (ann.netProfitMargin.filter(v => v != null).slice(-1)[0] ?? null) : null;
+    const epsYoys = ann ? ann.epsYoy.filter(v => v != null).slice(-3) : [];
+    const eps3yr  = epsYoys.length ? +(epsYoys.reduce((a, b) => a + b, 0) / epsYoys.length).toFixed(1) : null;
+    const mcRaw   = parseMarketCap(d.marketCap);
+    row.kpiMktCap    = mcRaw != null ? mcRaw / 1e9 : null;
+    row.kpiMktCapStr = (d.marketCap && d.marketCap !== 'nan') ? d.marketCap : null;
+    row.kpiPE    = d.trailingPE ?? null;
+    row.kpiPS    = d.priceToSales ?? null;
+    row.kpiROE   = lastRoe;
+    row.kpiPFCF  = d.priceToFreeCashFlow ?? null;
+    row.kpiNPM   = lastNpm;
+    row.kpiEPSGr = eps3yr;
+
     return row;
   });
 }
@@ -2029,6 +2051,12 @@ function renderOverview() {
       const cls = v === '↑' ? 'ov-pos' : v === '↓' ? 'ov-neg' : 'ov-flat';
       return `<span class="${cls}" style="font-size:16px">${v}</span>`;
     };
+    const kpi = (val, disp, colorFn) => {
+      if (val == null) return '<span class="ov-na">—</span>';
+      const c = colorFn(val);
+      const color = c === 'green' ? '#3DAD72' : c === 'yellow' ? '#E5C455' : '#D95555';
+      return `<span style="color:${color};font-weight:600">${disp}</span>`;
+    };
     return `<tr>
       <td><span class="ov-ticker">${r.ticker}</span></td>
       <td><span class="ov-company">${r.company}</span></td>
@@ -2053,6 +2081,13 @@ function renderOverview() {
       <td>${trend(r.epsMom)}</td>
       <td>${trend(r.revTrend)}</td>
       <td>${trend(r.revMom)}</td>
+      <td>${kpi(r.kpiMktCap, r.kpiMktCapStr ?? (r.kpiMktCap != null ? r.kpiMktCap.toFixed(1)+'B' : '—'), v => v < 1 ? 'green' : v <= 100 ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiPE,    r.kpiPE   != null ? r.kpiPE.toFixed(1)              : '—', v => v < 15  ? 'green' : v <= 30  ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiPS,    r.kpiPS   != null ? r.kpiPS.toFixed(2)              : '—', v => v < 1   ? 'green' : v <= 5   ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiROE,   r.kpiROE  != null ? r.kpiROE.toFixed(1)+'%'        : '—', v => v >= 20 ? 'green' : v >= 10 ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiPFCF,  r.kpiPFCF != null ? r.kpiPFCF.toFixed(1)           : '—', v => v < 20  ? 'green' : v <= 40  ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiNPM,   r.kpiNPM  != null ? r.kpiNPM.toFixed(1)+'%'        : '—', v => v > 10  ? 'green' : v >= 0   ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiEPSGr, r.kpiEPSGr != null ? (r.kpiEPSGr > 0 ? '+' : '') + r.kpiEPSGr.toFixed(1)+'%' : '—', v => v >= 15 ? 'green' : v >= 5 ? 'yellow' : 'red')}</td>
     </tr>`;
   }).join('');
 }
