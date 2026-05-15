@@ -162,6 +162,31 @@ main { max-width: 1440px; margin: 0 auto; padding: 32px 36px 60px; }
 .metric-pill:hover { border-color: var(--border2); }
 .metric-pill-overall { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.06); }
 .metric-pill-overall:hover { border-color: var(--gold); }
+.score-info-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(201,168,76,0.25); color: var(--gold);
+  font-size: 9px; font-weight: 700; font-style: normal;
+  cursor: pointer; margin-left: 5px; vertical-align: middle;
+  border: 1px solid rgba(201,168,76,0.4); line-height: 1;
+  position: relative; top: -1px;
+}
+.score-info-popup {
+  display: none; position: absolute; z-index: 999;
+  background: var(--panel2); border: 1px solid var(--gold);
+  border-radius: 10px; padding: 14px 16px;
+  width: 300px; box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+  font-size: 12px; color: var(--text); line-height: 1.5;
+  top: calc(100% + 8px); left: 0;
+}
+.score-info-popup table { width: 100%; border-collapse: collapse; }
+.score-info-popup td { padding: 3px 6px; }
+.score-info-popup td:first-child { color: var(--text2); white-space: nowrap; }
+.score-info-popup .si-g { color: #3DAD72; font-weight: 600; }
+.score-info-popup .si-y { color: #E5C455; font-weight: 600; }
+.score-info-popup .si-r { color: #D95555; font-weight: 600; }
+.score-info-wrap { position: relative; display: inline-block; }
+.score-info-wrap:hover .score-info-popup { display: block; }
 /* ── Fair Value Estimator ───────────────────────────────────── */
 .fv-section { margin-top: 20px; }
 .fv-inputs { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -583,8 +608,6 @@ main { max-width: 1440px; margin: 0 auto; padding: 32px 36px 60px; }
     </div>
     <div class="company-price" id="companyPrice"></div>
     <div class="metrics-strip" id="metricsStrip"></div>
-    <div class="canslim-card" id="canslimCard" style="display:none"></div>
-    <div class="canslim-card" id="lynchCard" style="display:none"></div>
 
     <!-- Intrinsic Value Estimator -->
     <div class="fv-section" id="fvSection" style="display:none">
@@ -793,6 +816,12 @@ main { max-width: 1440px; margin: 0 auto; padding: 32px 36px 60px; }
         requires Relative Strength ranking against peers, also not available here.
       </div>
     </div>
+  </div>
+
+  <div id="companyHealthSection" style="display:none">
+    <div class="section-label" style="margin-top:32px;margin-bottom:16px">Current Company Health</div>
+    <div class="canslim-card" id="canslimCard" style="display:none"></div>
+    <div class="canslim-card" id="lynchCard" style="display:none"></div>
   </div>
 
   <div class="footer">
@@ -1556,29 +1585,20 @@ function renderCanslim(d) {
   const sc = canslimScore(d);
   const lc = lynchScore(d);
 
-  // Score pills
-  ['overallPill','canslimPill','lynchPill'].forEach(id => { const e = document.getElementById(id); if (e) e.remove(); });
+  // Score pills — Overall Score only in the top strip
+  const existingOverall = document.getElementById('overallPill');
+  if (existingOverall) existingOverall.remove();
   const strip = document.getElementById('metricsStrip');
-  if (sc.score != null) {
-    const p = document.createElement('div');
-    p.id = 'canslimPill'; p.className = 'metric-pill';
-    p.innerHTML = `<div class="metric-label">O'Neil Score${sc.cWarning ? ' ⚠' : ''}</div><div class="metric-value c-white">${sc.score.toFixed(2)}</div>`;
-    if (sc.cWarning) p.title = 'Current EPS growth is weak — O\'Neil considers this a disqualifying signal';
-    strip.insertBefore(p, strip.firstChild);
-  }
-  if (lc.score != null) {
-    const p = document.createElement('div');
-    p.id = 'lynchPill'; p.className = 'metric-pill';
-    p.innerHTML = `<div class="metric-label">Lynch Score</div><div class="metric-value c-white">${lc.score.toFixed(2)}</div>`;
-    strip.insertBefore(p, strip.firstChild);
-  }
   const os = overallScore(d);
   if (os != null) {
     const p = document.createElement('div');
     p.id = 'overallPill'; p.className = 'metric-pill metric-pill-overall';
-    p.innerHTML = `<div class="metric-label">Overall Score</div><div class="metric-value c-gold">${os.toFixed(2)}</div>`;
+    p.innerHTML = `<div class="metric-label">Overall Score<span class="score-info-wrap"><i class="score-info-btn">i</i><div class="score-info-popup"><strong style="color:var(--gold);font-size:12px">Overall Score (0–10)</strong><div style="color:var(--text2);margin:4px 0 10px;font-size:11px">1pt = green &nbsp;·&nbsp; 0.5pt = yellow &nbsp;·&nbsp; 0pt = red &nbsp;·&nbsp; score = pts ÷ total × 10</div><div style="display:flex;flex-direction:column;gap:5px;font-size:12px"><div><span style="color:var(--text2);display:inline-block;width:82px">Mkt Cap</span><span class="si-g">&lt;$1B</span> · <span class="si-y">$1–100B</span> · <span class="si-r">&gt;$100B</span></div><div><span style="color:var(--text2);display:inline-block;width:82px">P/E</span><span class="si-g">&lt;15</span> · <span class="si-y">15–30</span> · <span class="si-r">&gt;30</span></div><div><span style="color:var(--text2);display:inline-block;width:82px">P/S</span><span class="si-g">&lt;1</span> · <span class="si-y">1–5</span> · <span class="si-r">&gt;5</span></div><div><span style="color:var(--text2);display:inline-block;width:82px">ROE</span><span class="si-g">≥20%</span> · <span class="si-y">10–20%</span> · <span class="si-r">&lt;10%</span></div><div><span style="color:var(--text2);display:inline-block;width:82px">P/FCF</span><span class="si-g">&lt;20</span> · <span class="si-y">20–40</span> · <span class="si-r">&gt;40</span></div><div><span style="color:var(--text2);display:inline-block;width:82px">Net Margin</span><span class="si-g">&gt;10%</span> · <span class="si-y">0–10%</span> · <span class="si-r">&lt;0%</span></div><div><span style="color:var(--text2);display:inline-block;width:82px">EPS Gr (3yr)</span><span class="si-g">≥15%</span> · <span class="si-y">5–15%</span> · <span class="si-r">&lt;5%</span></div></div></div></span></div><div class="metric-value c-gold">${os.toFixed(2)}</div>`;
     strip.insertBefore(p, strip.firstChild);
   }
+
+  // Show the Current Company Health section
+  document.getElementById('companyHealthSection').style.display = '';
 
   // O'Neil card
   const card = document.getElementById('canslimCard');
@@ -1619,19 +1639,41 @@ function renderHeader(d) {
 
   const strip = document.getElementById('metricsStrip');
   strip.innerHTML = '';
-  const pills = [
-    d.jittaScore           != null && { label: 'Jitta Score',        value: d.jittaScore.toFixed(2),           cls: 'c-white' },
-    d.overJittaLine                && { label: 'Over Jitta Line',    value: d.overJittaLine,                   cls: 'c-white' },
-    d.marketCap                    && { label: 'Market Cap',         value: d.marketCap,                       cls: 'c-white' },
-    d.trailingPE           != null && { label: 'Trailing P/E',       value: d.trailingPE.toFixed(2),           cls: 'c-white' },
-    d.priceToSales         != null && { label: 'Price/Sales',        value: d.priceToSales.toFixed(2),         cls: 'c-white' },
-    d.priceToFreeCashFlow  != null && { label: 'Price/FCF',          value: d.priceToFreeCashFlow.toFixed(2),  cls: 'c-white' },
-  ].filter(Boolean);
-  pills.forEach(p => {
+
+  const kpiColor = (v, fn) => { const c = fn(v); return c === 'green' ? '#3DAD72' : c === 'yellow' ? '#E5C455' : '#D95555'; };
+
+  // Jitta pills (no score color)
+  [
+    d.jittaScore  != null && { label: 'Jitta Score',     value: d.jittaScore.toFixed(2), color: null },
+    d.overJittaLine       && { label: 'Over Jitta Line', value: d.overJittaLine,         color: null },
+  ].filter(Boolean).forEach(p => {
     const el = document.createElement('div');
     el.className = 'metric-pill';
-    el.innerHTML = `<div class="metric-label">${p.label}</div>
-                    <div class="metric-value ${p.cls}">${p.value}</div>`;
+    el.innerHTML = `<div class="metric-label">${p.label}</div><div class="metric-value c-white">${p.value}</div>`;
+    strip.appendChild(el);
+  });
+
+  // 7 score KPIs — color coded green/yellow/red
+  const mcRaw = parseMarketCap(d.marketCap);
+  const mcB   = mcRaw != null ? mcRaw / 1e9 : null;
+  const lastAnn = (arr) => { const f = (arr || []).filter(v => v != null); return f.length ? f[f.length - 1] : null; };
+  const epsYoys = (d.annual?.epsYoy || []).filter(v => v != null).slice(-3);
+  const epsGr3  = epsYoys.length ? epsYoys.reduce((a, b) => a + b, 0) / epsYoys.length : null;
+
+  const scoreKpis = [
+    mcB            != null && { label: 'Mkt Cap',     value: d.marketCap,                                          color: kpiColor(mcB,            v => v < 1   ? 'green' : v <= 100 ? 'yellow' : 'red') },
+    d.trailingPE   != null && { label: 'P/E',         value: d.trailingPE.toFixed(1),                              color: kpiColor(d.trailingPE,   v => v < 15  ? 'green' : v <= 30  ? 'yellow' : 'red') },
+    d.priceToSales != null && { label: 'P/S',         value: d.priceToSales.toFixed(2),                            color: kpiColor(d.priceToSales, v => v < 1   ? 'green' : v <= 5   ? 'yellow' : 'red') },
+    lastAnn(d.annual?.returnOnEquity) != null && { label: 'ROE',  value: lastAnn(d.annual?.returnOnEquity).toFixed(1) + '%', color: kpiColor(lastAnn(d.annual?.returnOnEquity), v => v >= 20 ? 'green' : v >= 10  ? 'yellow' : 'red') },
+    d.priceToFreeCashFlow != null && { label: 'P/FCF',      value: d.priceToFreeCashFlow.toFixed(1),              color: kpiColor(d.priceToFreeCashFlow, v => v < 20  ? 'green' : v <= 40  ? 'yellow' : 'red') },
+    lastAnn(d.annual?.netProfitMargin) != null && { label: 'Net Margin', value: lastAnn(d.annual?.netProfitMargin).toFixed(1) + '%', color: kpiColor(lastAnn(d.annual?.netProfitMargin), v => v > 10  ? 'green' : v >= 0   ? 'yellow' : 'red') },
+    epsGr3         != null && { label: 'EPS Gr (3yr)', value: (epsGr3 > 0 ? '+' : '') + epsGr3.toFixed(1) + '%',  color: kpiColor(epsGr3,         v => v >= 15 ? 'green' : v >= 5   ? 'yellow' : 'red') },
+  ].filter(Boolean);
+
+  scoreKpis.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'metric-pill';
+    el.innerHTML = `<div class="metric-label">${p.label}</div><div class="metric-value" style="color:${p.color};font-weight:700">${p.value}</div>`;
     strip.appendChild(el);
   });
 }
@@ -2078,35 +2120,13 @@ const OV_COLS = [
   { key: 'company',     label: 'Company',          type: 'str'   },
   { key: 'growth',      label: '★ Growth',         type: 'bool'  },
   { key: 'overall',     label: 'Overall Score',    type: 'num'   },
-  { key: 'score',       label: "O'Neil Score",     type: 'num'   },
-  { key: 'lynchScore',  label: 'Lynch Score',      type: 'num'   },
-  { key: 'jitta',       label: 'Jitta Score',      type: 'num'   },
-  { key: 'epsYoy1',     label: 'EPS YoY Y-2',      type: 'num'   },
-  { key: 'epsYoy2',     label: 'EPS YoY Y-1',      type: 'num'   },
-  { key: 'epsYoy3',     label: 'EPS YoY Y0',       type: 'num'   },
-  { key: 'epsQoy1',     label: 'EPS SqYoY Q-2',    type: 'num'   },
-  { key: 'epsQoy2',     label: 'EPS SqYoY Q-1',    type: 'num'   },
-  { key: 'epsQoy3',     label: 'EPS SqYoY Q0',     type: 'num'   },
-  { key: 'revYoy1',     label: 'Rev YoY Y-2',      type: 'num'   },
-  { key: 'revYoy2',     label: 'Rev YoY Y-1',      type: 'num'   },
-  { key: 'revYoy3',     label: 'Rev YoY Y0',       type: 'num'   },
-  { key: 'revQoy1',     label: 'Rev SqYoY Q-2',    type: 'num'   },
-  { key: 'revQoy2',     label: 'Rev SqYoY Q-1',    type: 'num'   },
-  { key: 'revQoy3',     label: 'Rev SqYoY Q0',     type: 'num'   },
-  { key: 'epsTrend',    label: 'EPS Trend 3Y',     type: 'trend' },
-  { key: 'epsMom',      label: 'EPS Mom 2Q',       type: 'trend' },
-  { key: 'revTrend',    label: 'Rev Trend 3Y',     type: 'trend' },
-  { key: 'revMom',      label: 'Rev Mom 2Q',       type: 'trend' },
   { key: 'kpiMktCap',    label: 'Mkt Cap',          type: 'kpi'   },
-  { key: 'kpiInstOwn',   label: 'Inst Own',         type: 'kpi'   },
-  { key: 'kpiInsideOwn', label: 'Inside Own',       type: 'kpi'   },
   { key: 'kpiPE',        label: 'P/E',              type: 'kpi'   },
   { key: 'kpiPS',        label: 'P/S',              type: 'kpi'   },
   { key: 'kpiROE',       label: 'ROE %',            type: 'kpi'   },
   { key: 'kpiPFCF',      label: 'P/FCF',            type: 'kpi'   },
   { key: 'kpiNPM',       label: 'Net Margin',       type: 'kpi'   },
   { key: 'kpiEPSGr',     label: '3yr EPS Gr',       type: 'kpi'   },
-  { key: 'kpiDebtEq',    label: 'Debt/Eq',          type: 'kpi'   },
 ];
 
 const TREND_ORDER = { '↑': 3, '→': 2, '↓': 1 };
@@ -2268,35 +2288,13 @@ function renderOverview() {
       <td><span class="ov-company">${r.company}</span></td>
       <td style="text-align:center">${r.growth ? '<span style="color:#C9A84C;font-size:15px">★</span>' : '<span class="ov-na">—</span>'}</td>
       <td><span class="ov-overall">${r.overall != null ? r.overall.toFixed(2) : '<span class="ov-na">—</span>'}</span></td>
-      <td><span class="ov-score">${r.score != null ? r.score.toFixed(2) : '<span class="ov-na">—</span>'}</span></td>
-      <td><span class="ov-score">${r.lynchScore != null ? r.lynchScore.toFixed(2) : '<span class="ov-na">—</span>'}</span></td>
-      <td><span class="ov-jitta">${r.jitta != null ? r.jitta.toFixed(2) : '<span class="ov-na">—</span>'}</span></td>
-      <td>${pct(r.epsYoy1, r.epsYoyLabel1)}</td>
-      <td>${pct(r.epsYoy2, r.epsYoyLabel2)}</td>
-      <td>${pct(r.epsYoy3, r.epsYoyLabel3)}</td>
-      <td>${pct(r.epsQoy1, r.epsQoyLabel1)}</td>
-      <td>${pct(r.epsQoy2, r.epsQoyLabel2)}</td>
-      <td>${pct(r.epsQoy3, r.epsQoyLabel3)}</td>
-      <td>${pct(r.revYoy1, r.revYoyLabel1)}</td>
-      <td>${pct(r.revYoy2, r.revYoyLabel2)}</td>
-      <td>${pct(r.revYoy3, r.revYoyLabel3)}</td>
-      <td>${pct(r.revQoy1, r.revQoyLabel1)}</td>
-      <td>${pct(r.revQoy2, r.revQoyLabel2)}</td>
-      <td>${pct(r.revQoy3, r.revQoyLabel3)}</td>
-      <td>${trend(r.epsTrend)}</td>
-      <td>${trend(r.epsMom)}</td>
-      <td>${trend(r.revTrend)}</td>
-      <td>${trend(r.revMom)}</td>
       <td>${kpi(r.kpiMktCap,    r.kpiMktCapStr ?? (r.kpiMktCap != null ? r.kpiMktCap.toFixed(1)+'B' : '—'),                              v => v < 1   ? 'green' : v <= 100 ? 'yellow' : 'red')}</td>
-      <td>${kpi(r.kpiInstOwn,   r.kpiInstOwn   != null ? r.kpiInstOwn.toFixed(1)+'%'                        : '—',                        v => v < 40  ? 'green' : v <= 70  ? 'yellow' : 'red')}</td>
-      <td>${kpi(r.kpiInsideOwn, r.kpiInsideOwn != null ? r.kpiInsideOwn.toFixed(1)+'%'                      : '—',                        v => v > 30  ? 'green' : v >= 5   ? 'yellow' : 'red')}</td>
       <td>${kpi(r.kpiPE,        r.kpiPE        != null ? r.kpiPE.toFixed(1)                                 : '—',                        v => v < 15  ? 'green' : v <= 30  ? 'yellow' : 'red')}</td>
       <td>${kpi(r.kpiPS,        r.kpiPS        != null ? r.kpiPS.toFixed(2)                                 : '—',                        v => v < 1   ? 'green' : v <= 5   ? 'yellow' : 'red')}</td>
       <td>${kpi(r.kpiROE,       r.kpiROE       != null ? r.kpiROE.toFixed(1)+'%'                            : '—',                        v => v >= 20 ? 'green' : v >= 10  ? 'yellow' : 'red')}</td>
       <td>${kpi(r.kpiPFCF,      r.kpiPFCF      != null ? r.kpiPFCF.toFixed(1)                               : '—',                        v => v < 20  ? 'green' : v <= 40  ? 'yellow' : 'red')}</td>
       <td>${kpi(r.kpiNPM,       r.kpiNPM       != null ? r.kpiNPM.toFixed(1)+'%'                            : '—',                        v => v > 10  ? 'green' : v >= 0   ? 'yellow' : 'red')}</td>
       <td>${kpi(r.kpiEPSGr,     r.kpiEPSGr     != null ? (r.kpiEPSGr > 0 ? '+' : '') + r.kpiEPSGr.toFixed(1)+'%' : '—',                 v => v >= 15 ? 'green' : v >= 5   ? 'yellow' : 'red')}</td>
-      <td>${kpi(r.kpiDebtEq,    r.kpiDebtEq    != null ? r.kpiDebtEq.toFixed(2)                             : '—',                        v => v <= 0  ? 'green' : v < 1    ? 'yellow' : 'red')}</td>
     </tr>`;
   }).join('');
 }
