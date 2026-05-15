@@ -836,7 +836,6 @@ main { max-width: 1440px; margin: 0 auto; padding: 32px 36px 60px; }
 <div class="overview-page" id="overviewPage">
   <div class="ov-toolbar">
     <div class="ov-title">All Stocks</div>
-    <button class="ov-filter-btn" id="trendFilterBtn" onclick="toggleTrendFilter()">↑ All Trending Up</button>
     <button class="ov-filter-btn" id="growthFilterBtn" onclick="toggleGrowthFilter()">★ Growth Stocks</button>
   </div>
   <div class="ov-wrap">
@@ -2171,13 +2170,6 @@ function trendDir(vals) {
   return allUp ? '↑' : allDown ? '↓' : '→';
 }
 
-let trendFilterActive = false;
-function toggleTrendFilter() {
-  trendFilterActive = !trendFilterActive;
-  document.getElementById('trendFilterBtn').classList.toggle('active', trendFilterActive);
-  renderOverview();
-}
-
 let growthFilterActive = false;
 function toggleGrowthFilter() {
   growthFilterActive = !growthFilterActive;
@@ -2255,9 +2247,6 @@ function sortRows(rows) {
 
 function renderOverview() {
   let rows = buildOvRows();
-  if (trendFilterActive) {
-    rows = rows.filter(r => r.epsTrend === '↑' && r.epsMom === '↑' && r.revTrend === '↑' && r.revMom === '↑');
-  }
   if (growthFilterActive) {
     rows = rows.filter(r => r.growth === true);
   }
