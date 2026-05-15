@@ -2114,7 +2114,24 @@ const first = Object.keys(DATA)[0];
 if (first) selectTicker(first);
 
 // ── Overview Page ─────────────────────────────────────────────────────
-const GROWTH_STOCKS = new Set(['AGI','AGX','ANET','APP','CLS','COCO','CXDO','EME','FIX','HMY','IDR','IESC','INTA','INTU','LFMD','LIF','NBIX','NTNX','SN','TMDX','VITL','VMD','VRT']);
+function isGrowthStock(d) {
+  const ann = d.annual;
+  const mc = parseMarketCap(d.marketCap);
+  // Each check: if value is present, it must not be red (pts > 0)
+  if (mc != null && mc / 1e9 > 100) return false;                                          // Mkt Cap red
+  if (d.trailingPE != null && d.trailingPE > 30) return false;                             // P/E red
+  if (d.priceToSales != null && d.priceToSales > 5) return false;                          // P/S red
+  if (d.priceToFreeCashFlow != null && d.priceToFreeCashFlow > 40) return false;           // P/FCF red
+  if (ann) {
+    const roes = ann.returnOnEquity.filter(v => v != null);
+    if (roes.length && roes[roes.length - 1] < 10) return false;                           // ROE red
+    const npms = ann.netProfitMargin.filter(v => v != null);
+    if (npms.length && npms[npms.length - 1] < 0) return false;                            // Net Margin red
+    const yoys = ann.epsYoy.filter(v => v != null).slice(-3);
+    if (yoys.length && yoys.reduce((a, b) => a + b, 0) / yoys.length < 5) return false;   // EPS Growth red
+  }
+  return true;
+}
 const OV_COLS = [
   { key: 'ticker',      label: 'Ticker',          type: 'str'   },
   { key: 'company',     label: 'Company',          type: 'str'   },
@@ -2174,7 +2191,7 @@ function buildOvRows() {
     const lc  = lynchScore(d);
     const ann = d.annual;
     const qtr = d.quarterly;
-    const row = { ticker: d.ticker, company: d.company, growth: GROWTH_STOCKS.has(d.ticker), overall: overallScore(d), score: sc.score, lynchScore: lc.score, jitta: d.jittaScore };
+    const row = { ticker: d.ticker, company: d.company, growth: isGrowthStock(d), overall: overallScore(d), score: sc.score, lynchScore: lc.score, jitta: d.jittaScore };
 
     // Annual EPS & Rev YoY — last 3 non-null entries
     const annEps = ann ? ann.epsYoy.map((v,i) => v != null ? { p: ann.periods[i], v } : null).filter(Boolean).slice(-3) : [];
