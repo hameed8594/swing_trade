@@ -1405,19 +1405,84 @@ function lynchScore(d) {
   };
 }
 
+function parseMarketCap(s) {
+  if (!s || s === 'nan') return null;
+  const m = String(s).replace(/[$,\s]/g, '').match(/^([\d.]+)([KMBT]?)$/i);
+  if (!m) return null;
+  const n = parseFloat(m[1]);
+  const mult = { K: 1e3, M: 1e6, B: 1e9, T: 1e12, '': 1 }[m[2].toUpperCase()] ?? 1;
+  return n * mult;
+}
+
 function overallScore(d) {
-  const sc = canslimScore(d);
-  const lc = lynchScore(d);
-  const oneil = sc.score;
-  const lynch = lc.score;
-  const jitta = d.jittaScore;
-  const parts = [];
-  if (oneil != null) parts.push({ v: oneil, w: 0.40 });
-  if (lynch != null) parts.push({ v: lynch, w: 0.40 });
-  if (jitta != null) parts.push({ v: jitta, w: 0.20 });
-  if (!parts.length) return null;
-  const totalW = parts.reduce((s, p) => s + p.w, 0);
-  return +(parts.reduce((s, p) => s + p.v * p.w, 0) / totalW * 1).toFixed(2);
+  const ann = d.annual;
+  let pts = 0, total = 0;
+
+  // Market Cap: green <1B, yellow 1–100B, red >100B
+  const mc = parseMarketCap(d.marketCap);
+  if (mc != null) {
+    const mcB = mc / 1e9;
+    total++;
+    if (mcB < 1) pts += 1;
+    else if (mcB <= 100) pts += 0.5;
+  }
+
+  // P/E: green <15, yellow 15–30, red >30
+  if (d.trailingPE != null) {
+    total++;
+    if (d.trailingPE < 15) pts += 1;
+    else if (d.trailingPE <= 30) pts += 0.5;
+  }
+
+  // P/S: green <1, yellow 1–5, red >5
+  if (d.priceToSales != null) {
+    total++;
+    if (d.priceToSales < 1) pts += 1;
+    else if (d.priceToSales <= 5) pts += 0.5;
+  }
+
+  // ROE (most recent annual): green ≥20%, yellow 10–20%, red <10%
+  if (ann) {
+    const roes = ann.returnOnEquity.filter(v => v != null);
+    if (roes.length) {
+      total++;
+      const roe = roes[roes.length - 1];
+      if (roe >= 20) pts += 1;
+      else if (roe >= 10) pts += 0.5;
+    }
+  }
+
+  // P/FCF: green <20, yellow 20–40, red >40
+  if (d.priceToFreeCashFlow != null) {
+    total++;
+    if (d.priceToFreeCashFlow < 20) pts += 1;
+    else if (d.priceToFreeCashFlow <= 40) pts += 0.5;
+  }
+
+  // Net Profit Margin (most recent annual): green >10%, yellow 0–10%, red <0%
+  if (ann) {
+    const npms = ann.netProfitMargin.filter(v => v != null);
+    if (npms.length) {
+      total++;
+      const npm = npms[npms.length - 1];
+      if (npm > 10) pts += 1;
+      else if (npm >= 0) pts += 0.5;
+    }
+  }
+
+  // 3yr EPS growth avg: green ≥15%, yellow 5–15%, red <5%
+  if (ann) {
+    const yoys = ann.epsYoy.filter(v => v != null).slice(-3);
+    if (yoys.length) {
+      total++;
+      const avg = yoys.reduce((a, b) => a + b, 0) / yoys.length;
+      if (avg >= 15) pts += 1;
+      else if (avg >= 5) pts += 0.5;
+    }
+  }
+
+  if (!total) return null;
+  return +(pts / total * 10).toFixed(2);
 }
 
 function buildScoreRows(criteria) {
