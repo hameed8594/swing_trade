@@ -1987,6 +1987,16 @@ function selectTicker(ticker) {
   renderCanslim(d);
   // reset PE input to trailing PE for new ticker
   document.getElementById('fvPE').value = d.trailingPE != null ? d.trailingPE.toFixed(1) : '';
+  // auto-populate EPS growth from historical data (avg of last 3 non-null EPS YoY values, capped at 50%)
+  const growthInput = document.getElementById('fvGrowth');
+  growthInput.value = '';
+  const epsYoy = d.annual?.epsYoy ?? [];
+  const validYoy = epsYoy.filter(v => v != null && isFinite(v) && v > -100);
+  if (validYoy.length > 0) {
+    const recent = validYoy.slice(-3);
+    const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+    growthInput.value = Math.min(Math.max(avg, 0), 50).toFixed(1);
+  }
   renderFairValue(d);
   updatePeriodButtons(ticker);
 }
