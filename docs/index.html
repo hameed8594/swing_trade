@@ -2456,7 +2456,7 @@ function renderOverview() {
       const color = c === 'green' ? '#3DAD72' : c === 'yellow' ? '#E5C455' : '#D95555';
       return `<span style="color:${color};font-weight:600">${disp}</span>`;
     };
-    return `<tr>
+    return `<tr style="cursor:pointer" onclick="selectTicker('${r.ticker}');switchPage('dashboard')">
       <td><span class="ov-ticker">${r.ticker}</span></td>
       <td><span class="ov-company">${r.company}</span></td>
       <td style="text-align:center">${r.growth ? '<span style="color:#C9A84C;font-size:15px">★</span>' : '<span class="ov-na">—</span>'}</td>
