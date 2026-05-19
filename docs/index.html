@@ -2310,9 +2310,11 @@ const OV_COLS = [
   { key: 'kpiPE',        label: 'P/E',              type: 'kpi'   },
   { key: 'kpiPS',        label: 'P/S',              type: 'kpi'   },
   { key: 'kpiROE',       label: 'ROE %',            type: 'kpi'   },
-  { key: 'kpiPFCF',      label: 'P/FCF',            type: 'kpi'   },
-  { key: 'kpiNPM',       label: 'Net Margin',       type: 'kpi'   },
-  { key: 'kpiEPSGr',     label: '3yr EPS Gr',       type: 'kpi'   },
+  { key: 'kpiPFCF',        label: 'P/FCF',            type: 'kpi'   },
+  { key: 'kpiNPM',         label: 'Net Margin',       type: 'kpi'   },
+  { key: 'kpiEPSGr',       label: '3yr EPS Gr',       type: 'kpi'   },
+  { key: 'kpiInstOwned',   label: 'Inst. Owned',      type: 'kpi'   },
+  { key: 'kpiInsiderOwned',label: 'Insider Owned',    type: 'kpi'   },
 ];
 
 const TREND_ORDER = { '↑': 3, '→': 2, '↓': 1 };
@@ -2393,6 +2395,8 @@ function buildOvRows() {
     row.kpiPFCF  = d.priceToFreeCashFlow ?? null;
     row.kpiNPM   = lastNpm;
     row.kpiEPSGr = eps3yr;
+    row.kpiInstOwned    = d.institutionalOwnership?.heldByInstitutions ?? null;
+    row.kpiInsiderOwned = d.institutionalOwnership?.heldByInsiders ?? null;
 
     return row;
   });
@@ -2467,7 +2471,9 @@ function renderOverview() {
       <td>${kpi(r.kpiROE,       r.kpiROE       != null ? r.kpiROE.toFixed(1)+'%'                            : '—',                        v => v >= 20 ? 'green' : v >= 10  ? 'yellow' : 'red')}</td>
       <td>${kpi(r.kpiPFCF,      r.kpiPFCF      != null ? r.kpiPFCF.toFixed(1)                               : '—',                        v => v < 20  ? 'green' : v <= 40  ? 'yellow' : 'red')}</td>
       <td>${kpi(r.kpiNPM,       r.kpiNPM       != null ? r.kpiNPM.toFixed(1)+'%'                            : '—',                        v => v > 10  ? 'green' : v >= 0   ? 'yellow' : 'red')}</td>
-      <td>${kpi(r.kpiEPSGr,     r.kpiEPSGr     != null ? (r.kpiEPSGr > 0 ? '+' : '') + r.kpiEPSGr.toFixed(1)+'%' : '—',                 v => v >= 15 ? 'green' : v >= 5   ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiEPSGr,       r.kpiEPSGr       != null ? (r.kpiEPSGr > 0 ? '+' : '') + r.kpiEPSGr.toFixed(1)+'%'  : '—', v => v >= 15 ? 'green' : v >= 5  ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiInstOwned,   r.kpiInstOwned   != null ? r.kpiInstOwned.toFixed(1)+'%'                              : '—', v => v < 40  ? 'green' : v <= 70 ? 'yellow' : 'red')}</td>
+      <td>${kpi(r.kpiInsiderOwned,r.kpiInsiderOwned != null ? r.kpiInsiderOwned.toFixed(2)+'%'                          : '—', v => v >= 30 ? 'green' : v >= 5  ? 'yellow' : 'red')}</td>
     </tr>`;
   }).join('');
 }
