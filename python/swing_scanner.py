@@ -17,6 +17,7 @@ Usage:
 """
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -687,6 +688,52 @@ def finalize(results, market, spy_return_12m=None):
     return results
 
 
+ALERT_CODES = ("buy", "setup")
+
+
+def previous_verdicts(html_path):
+    """Verdict per ticker from the last scan still embedded in the dashboard."""
+    try:
+        html = Path(html_path).read_text(encoding="utf-8")
+        m = re.search(r"const SWING_DATA = (\{.*?\});\n", html, flags=re.DOTALL)
+        data = json.loads(m.group(1)) if m else {}
+    except (OSError, ValueError):
+        return {}
+    if data.get("schema") != 2:
+        return {}
+    return {s["ticker"]: s["verdict"]["code"] for s in data.get("stocks", [])}
+
+
+def find_alerts(results, prev, market, generated_at):
+    """Stocks that just became a Setup, or just became a Buy, since the last scan.
+    A Buy slipping back to Setup is not alerted."""
+    alerts = []
+    for r in results:
+        code, before = r["verdict"]["code"], prev.get(r["ticker"])
+        if code not in ALERT_CODES or code == before or (code == "setup" and before == "buy"):
+            continue
+        vcp, f = r["vcp"], r["fundamentals"]
+        alerts.append({
+            "ticker":       r["ticker"],
+            "company":      r["company_name"],
+            "code":         code,
+            "label":        r["verdict"]["label"],
+            "previous":     before,
+            "headline":     r["verdict"]["headline"],
+            "price":        r["price"],
+            "pivot":        vcp.get("pivot_price"),
+            "pct_vs_pivot": vcp.get("pct_vs_pivot"),
+            "trade":        r.get("trade"),
+            "rs_rank":      r.get("rs_rank"),
+            "eps_growth":   f.get("eps_growth"),
+            "sales_growth": f.get("revenue_growth"),
+            "vol_vs_avg":   r.get("vol_vs_avg_pct"),
+            "market":       market.get("label"),
+            "generated_at": generated_at,
+        })
+    return alerts
+
+
 def _json_default(o):
     """numpy / pandas scalars (e.g. numpy.bool_ from comparisons) → plain Python."""
     if hasattr(o, "item"):
@@ -749,6 +796,12 @@ def main():
         "stocks":        results,
     }
 
+    prev = previous_verdicts(DASHBOARD_HTML)
+    alerts = find_alerts(results, prev, market, generated_at)
+    alerts_file = os.environ.get("SWING_ALERTS_FILE")
+    if alerts_file:
+        Path(alerts_file).write_text(json.dumps(alerts, indent=2, default=_json_default), encoding="utf-8")
+
     inject(payload, DASHBOARD_HTML)
 
     print(f"\nDone — {len(results)}/{len(tickers)} stocks scanned")
@@ -756,6 +809,8 @@ def main():
     print(f"Stage 2 + VCP:     {payload['vcp_count']}")
     for code in VERDICTS:
         print(f"{VERDICTS[code]['label']:<18} {payload['counts'][code]}")
+    alert_txt = ", ".join("%s (%s)" % (a["ticker"], a["label"]) for a in alerts) or "none"
+    print(f"New alerts:        {alert_txt}")
     print(f"Injected into:     {DASHBOARD_HTML.resolve()}")
 
 
