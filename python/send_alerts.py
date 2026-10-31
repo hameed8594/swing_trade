@@ -92,7 +92,8 @@ def sample_alert():
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
-    if sys.argv[1] == "--test":
+    test = sys.argv[1] == "--test"
+    if test:
         alerts = sample_alert()
     else:
         path = Path(sys.argv[1])
@@ -108,7 +109,8 @@ def main():
     existing = {i["title"] for i in json.loads(listed.stdout or "[]")}
 
     for a in alerts:
-        day = a["generated_at"][:10]
+        # Test alerts carry the time so every test run opens a fresh issue
+        day = a["generated_at"] if test else a["generated_at"][:10]
         title = f"{ICONS.get(a['code'], '')} {a['label']}: {a['ticker']} ({day})".strip()
         if title in existing:
             print(f"Already alerted: {title}")
