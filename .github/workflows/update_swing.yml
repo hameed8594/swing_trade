@@ -19,6 +19,11 @@ on:
     - cron: '32 19 * * 1-5'  #  3:32 PM ET
     - cron: '0 20 * * 1-5'   #  4:00 PM ET
   workflow_dispatch:  # allows manual trigger from GitHub UI
+    inputs:
+      send_test_alert:
+        description: 'Also open a sample alert issue to check notifications reach you'
+        type: boolean
+        default: false
 
 jobs:
   update:
@@ -26,6 +31,7 @@ jobs:
 
     permissions:
       contents: write  # needed to push the updated swing.html back
+      issues: write    # needed to open Buy/Setup alert issues
 
     steps:
       - name: Checkout repo
@@ -41,6 +47,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run swing scanner
+        env:
+          SWING_ALERTS_FILE: ${{ runner.temp }}/swing_alerts.json
         run: python python/swing_scanner.py
 
       - name: Commit updated dashboard
@@ -50,3 +58,17 @@ jobs:
           git add docs/swing.html
           git diff --cached --quiet || git commit -m "chore: update swing dashboard $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push
+
+      # Runs after the push, so a failed push leaves the old verdicts in place
+      # and the next scan re-detects the change instead of missing it.
+      - name: Send Buy/Setup alerts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SWING_ALERTS_FILE: ${{ runner.temp }}/swing_alerts.json
+        run: python python/send_alerts.py "$SWING_ALERTS_FILE"
+
+      - name: Send test alert
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test_alert }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python python/send_alerts.py --test
