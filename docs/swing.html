@@ -11,21 +11,25 @@
 <script>window.Chart || document.write('<script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.js"><\/script>')</script>
 <style>
 :root {
-  --bg:      #05060F;
-  --bg2:     #08091C;
-  --panel:   #0C0E2A;
-  --panel2:  #111438;
-  --border:  #1A1D4A;
-  --border2: #232760;
-  --text:    #EDE5CC;
-  --text2:   #B8A878;
-  --text3:   #7A6A50;
-  --gold:    #C9A84C;
-  --purple:  #9B6FD5;
-  --green:   #3DAD72;
-  --amber:   #E5C455;
-  --teal:    #5BBFB5;
-  --red:     #D95555;
+  --bg:      #180a1c;
+  --bg2:     #17091b;
+  --panel:   #1f0e24;
+  --panel2:  #2f1535;
+  --border:  #2f1834;
+  --border2: #3d2444;
+  --line:    #492e4e;
+  --nav-line:#463337;
+  --text:    #ece0ee;
+  --text2:   #c4b3c8;
+  --text3:   #857588;
+  --head:    #cab2cf;
+  --gold:    #dbbc81;
+  --gold2:   #d9b98c;
+  --purple:  #a98bc9;
+  --green:   #6da996;
+  --amber:   #d8b46a;
+  --teal:    #6fa6a8;
+  --red:     #c27272;
 }
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 15px; }
@@ -41,14 +45,14 @@ body {
 .nav {
   position: sticky; top: 0; z-index: 200;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 36px; height: 58px;
-  background: rgba(8,9,28,0.96);
-  border-bottom: 1px solid #C9A84C44;
+  padding: 0 36px; height: 64px;
+  background: rgba(23,9,27,0.96);
+  border-bottom: 1px solid var(--nav-line);
   backdrop-filter: blur(18px);
 }
 .nav-logo {
   display: flex; align-items: center; gap: 10px;
-  font-size: 14px; font-weight: 800; letter-spacing: 0.12em;
+  font-size: 15px; font-weight: 800; letter-spacing: 0.16em;
   color: var(--gold); text-transform: uppercase;
 }
 .nav-logo svg { width: 20px; height: 20px; }
@@ -63,7 +67,7 @@ body {
 main { max-width: 1440px; margin: 0 auto; padding: 32px 36px 60px; }
 
 .page-header { margin-bottom: 28px; }
-.page-title  { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+.page-title  { font-size: 17px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); margin-bottom: 8px; }
 .page-sub    { font-size: 13px; color: var(--text3); }
 .page-sub span { color: var(--text2); }
 
@@ -73,44 +77,54 @@ main { max-width: 1440px; margin: 0 auto; padding: 32px 36px 60px; }
   gap: 14px; margin-bottom: 28px;
 }
 .summary-card {
-  background: var(--panel); border: 1px solid var(--border);
-  border-radius: 12px; padding: 18px 20px;
+  background: var(--panel); border: 1px solid var(--border2);
+  border-radius: 14px; padding: 18px 20px;
 }
-.summary-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+.summary-label { font-size: 11px; font-weight: 700; color: var(--head); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
 .summary-value { font-size: 28px; font-weight: 700; line-height: 1; }
 .summary-value.gold   { color: var(--gold); }
 .summary-value.green  { color: var(--green); }
 .summary-value.purple { color: var(--purple); }
 
 /* ── Filter bar ───────────────────────────────────────────────── */
-.filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.section-title { font-size: 17px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); }
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .filter-btn {
-  padding: 7px 16px; border-radius: 7px;
-  border: 1px solid var(--border2); background: var(--panel);
-  color: var(--text2); font-size: 12px; font-weight: 600;
-  font-family: inherit; cursor: pointer; letter-spacing: 0.03em;
+  padding: 9px 18px; border-radius: 10px;
+  border: 1px solid #5b4948; background: transparent;
+  color: var(--text2); font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; letter-spacing: 0.06em;
   transition: all 0.18s;
 }
 .filter-btn:hover { border-color: var(--gold); color: var(--text); }
-.filter-btn.active { background: rgba(201,168,76,0.12); border-color: var(--gold); color: var(--gold); }
+.filter-btn.active { background: #281721; border-color: #84716a; color: var(--gold); }
 
 /* ── Table ────────────────────────────────────────────────────── */
 .table-wrap {
-  background: var(--panel); border: 1px solid var(--border);
-  border-radius: 14px; overflow: hidden;
+  background: var(--bg); border: 1px solid #35203e;
+  border-radius: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch;
 }
 table { width: 100%; border-collapse: collapse; }
 thead { background: var(--panel2); }
 th {
-  padding: 12px 14px; text-align: left;
-  font-size: 11px; font-weight: 600; color: var(--text3);
-  letter-spacing: 0.06em; text-transform: uppercase;
-  border-bottom: 1px solid var(--border2);
+  padding: 12px 16px; text-align: left; vertical-align: middle;
+  font-size: 12px; font-weight: 700; color: var(--head);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
   cursor: pointer; user-select: none; white-space: nowrap;
 }
-th:hover { color: var(--text2); }
+th:hover { color: var(--text); }
 th.sorted { color: var(--gold); }
-th .sort-arrow { display: inline-block; margin-left: 4px; opacity: 0.6; font-size: 10px; }
+th .sort-arrow { display: inline-block; margin-left: 5px; opacity: 0.55; font-size: 9px; }
+th.grp {
+  text-align: center; color: var(--gold2); cursor: default;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line);
+}
+.grp-start { border-left: 1px solid var(--border2); }
 th.sorted .sort-arrow { opacity: 1; color: var(--gold); }
 
 tbody tr {
@@ -119,14 +133,13 @@ tbody tr {
   cursor: pointer;
 }
 tbody tr:last-child { border-bottom: none; }
-tbody tr:hover { background: rgba(201,168,76,0.06); }
+tbody tr:hover { background: rgba(219,188,129,0.04); }
 tbody tr:hover .ticker-sym { color: var(--amber); }
 
-td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
+td { padding: 15px 16px; font-size: 14px; font-weight: 500; vertical-align: middle; }
 
-.ticker-cell { display: flex; flex-direction: column; gap: 2px; }
-.ticker-sym  { font-size: 14px; font-weight: 700; color: var(--gold); letter-spacing: 0.04em; transition: color 0.12s; }
-.ticker-co   { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.ticker-sym  { font-size: 15px; font-weight: 700; color: var(--gold); letter-spacing: 0.05em; transition: color 0.12s; white-space: nowrap; }
+.company-cell { color: var(--text2); font-weight: 400; min-width: 130px; max-width: 190px; line-height: 1.4; }
 .growth-star { color: var(--gold); font-size: 11px; margin-left: 4px; opacity: 0.9; }
 .price-val   { font-weight: 600; }
 
@@ -146,7 +159,7 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 .dots-row .tooltip {
   display: none; position: absolute;
   bottom: calc(100% + 8px); left: 0;
-  background: #181a3a; border: 1px solid var(--border2);
+  background: #2f1535; border: 1px solid var(--border2);
   border-radius: 10px; padding: 12px 14px;
   z-index: 999; white-space: nowrap;
   box-shadow: 0 16px 40px rgba(0,0,0,0.7);
@@ -164,13 +177,13 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 .tooltip-label.fail { color: var(--text3); }
 
 /* Badges */
-.badge { display: inline-block; padding: 3px 9px; border-radius: 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; }
-.badge-stage2  { background: rgba(61,173,114,0.12); color: var(--green);  border: 1px solid rgba(61,173,114,0.25); }
-.badge-vcp     { background: rgba(155,111,213,0.12); color: var(--purple); border: 1px solid rgba(155,111,213,0.25); }
-.badge-vcp-vol { background: rgba(155,111,213,0.18); color: var(--purple); border: 1px solid rgba(155,111,213,0.4); }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; white-space: nowrap; }
+.badge-stage2  { background: rgba(109,169,150,0.12); color: var(--green);  border: 1px solid rgba(109,169,150,0.25); }
+.badge-vcp     { background: rgba(169,139,201,0.12); color: var(--purple); border: 1px solid rgba(169,139,201,0.25); }
+.badge-vcp-vol { background: rgba(169,139,201,0.18); color: var(--purple); border: 1px solid rgba(169,139,201,0.4); }
 .badge-dim     { background: transparent; color: var(--text3); border: 1px solid var(--border); }
-.badge-sepa    { background: rgba(201,168,76,0.15); color: var(--gold);   border: 1px solid rgba(201,168,76,0.4); }
-.badge-sepa-q  { background: rgba(229,196,85,0.08); color: var(--amber);  border: 1px solid rgba(229,196,85,0.25); }
+.badge-sepa    { background: rgba(219,188,129,0.15); color: var(--gold);   border: 1px solid rgba(219,188,129,0.4); }
+.badge-sepa-q  { background: rgba(216,180,106,0.08); color: var(--amber);  border: 1px solid rgba(216,180,106,0.25); }
 
 .pct-close { color: var(--green); font-weight: 600; }
 .pct-mid   { color: var(--amber); font-weight: 600; }
@@ -182,10 +195,10 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 .filter-btn .count { margin-left: 6px; opacity: 0.6; font-weight: 500; }
 
 /* ── Verdict badges ───────────────────────────────────────────── */
-.v-buy      { background: rgba(61,173,114,0.2);   color: var(--green);  border: 1px solid rgba(61,173,114,0.5); }
-.v-setup    { background: rgba(201,168,76,0.15);  color: var(--gold);   border: 1px solid rgba(201,168,76,0.45); }
-.v-watch    { background: rgba(229,196,85,0.06);  color: var(--amber);  border: 1px solid rgba(229,196,85,0.25); }
-.v-extended { background: rgba(217,85,85,0.08);   color: var(--red);    border: 1px solid rgba(217,85,85,0.3); }
+.v-buy      { background: rgba(109,169,150,0.2);   color: var(--green);  border: 1px solid rgba(109,169,150,0.5); }
+.v-setup    { background: rgba(219,188,129,0.15);  color: var(--gold);   border: 1px solid rgba(219,188,129,0.45); }
+.v-watch    { background: rgba(216,180,106,0.06);  color: var(--amber);  border: 1px solid rgba(216,180,106,0.25); }
+.v-extended { background: rgba(194,114,114,0.08);   color: var(--red);    border: 1px solid rgba(194,114,114,0.3); }
 .v-avoid    { background: transparent;            color: var(--text3);  border: 1px solid var(--border); }
 .v-text-buy { color: var(--green); } .v-text-setup { color: var(--gold); } .v-text-watch { color: var(--amber); }
 .v-text-extended { color: var(--red); } .v-text-avoid { color: var(--text2); }
@@ -200,13 +213,13 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 .market-dot  { width: 9px; height: 9px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
 .market-note { color: var(--text2); flex: 1; min-width: 240px; }
 .market-nums { color: var(--text3); font-size: 11px; white-space: nowrap; }
-.market-banner.uptrend    { border-color: rgba(61,173,114,0.35); }
+.market-banner.uptrend    { border-color: rgba(109,169,150,0.35); }
 .market-banner.uptrend    strong { color: var(--green); }
 .market-banner.uptrend    .market-dot    { background: var(--green); }
-.market-banner.pressure   { border-color: rgba(229,196,85,0.35); }
+.market-banner.pressure   { border-color: rgba(216,180,106,0.35); }
 .market-banner.pressure   strong { color: var(--amber); }
 .market-banner.pressure   .market-dot   { background: var(--amber); }
-.market-banner.correction { border-color: rgba(217,85,85,0.4); }
+.market-banner.correction { border-color: rgba(194,114,114,0.4); }
 .market-banner.correction strong { color: var(--red); }
 .market-banner.correction .market-dot { background: var(--red); }
 
@@ -229,7 +242,7 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 ══════════════════════════════════════════════════════════════ */
 .overlay {
   display: none; position: fixed; inset: 0; z-index: 1000;
-  background: rgba(2,3,15,0.88);
+  background: rgba(12,4,14,0.88);
   backdrop-filter: blur(6px);
   overflow-y: auto;
   padding: 32px 20px 60px;
@@ -242,7 +255,7 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
   border: 1px solid var(--border2);
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(201,168,76,0.08);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(219,188,129,0.08);
 }
 
 /* Modal header */
@@ -266,7 +279,7 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
   display: flex; align-items: center; justify-content: center;
   transition: all 0.18s; margin-left: 16px;
 }
-.modal-close:hover { background: rgba(217,85,85,0.12); border-color: var(--red); color: var(--red); }
+.modal-close:hover { background: rgba(194,114,114,0.12); border-color: var(--red); color: var(--red); }
 
 /* Chart section */
 .modal-chart-section { padding: 24px 28px 0; }
@@ -309,8 +322,8 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 }
 .check-row:last-child { margin-bottom: 0; }
 .check-icon { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
-.check-icon.pass { background: rgba(61,173,114,0.15); color: var(--green); border: 1px solid rgba(61,173,114,0.3); }
-.check-icon.fail { background: rgba(217,85,85,0.1); color: var(--red); border: 1px solid rgba(217,85,85,0.2); opacity: 0.7; }
+.check-icon.pass { background: rgba(109,169,150,0.15); color: var(--green); border: 1px solid rgba(109,169,150,0.3); }
+.check-icon.fail { background: rgba(194,114,114,0.1); color: var(--red); border: 1px solid rgba(194,114,114,0.2); opacity: 0.7; }
 .check-text { color: var(--text2); line-height: 1.4; }
 .check-text.fail { color: var(--text3); }
 .check-val { color: var(--text3); font-size: 10px; margin-top: 1px; }
@@ -382,17 +395,17 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 }
 .tp-cell-value { font-size: 13px; font-weight: 600; color: var(--text); }
 .tp-cell-sub   { font-size: 11px; color: var(--text3); }
-.r-ready      { background: rgba(61,173,114,0.15);  color: var(--green);  border: 1px solid rgba(61,173,114,0.35); }
-.r-watch      { background: rgba(201,168,76,0.12);  color: var(--gold);   border: 1px solid rgba(201,168,76,0.35); }
-.r-extended   { background: rgba(217,85,85,0.1);    color: var(--red);    border: 1px solid rgba(217,85,85,0.3);  }
-.r-developing { background: rgba(229,196,85,0.08);  color: var(--amber);  border: 1px solid rgba(229,196,85,0.25); }
+.r-ready      { background: rgba(109,169,150,0.15);  color: var(--green);  border: 1px solid rgba(109,169,150,0.35); }
+.r-watch      { background: rgba(219,188,129,0.12);  color: var(--gold);   border: 1px solid rgba(219,188,129,0.35); }
+.r-extended   { background: rgba(194,114,114,0.1);    color: var(--red);    border: 1px solid rgba(194,114,114,0.3);  }
+.r-developing { background: rgba(216,180,106,0.08);  color: var(--amber);  border: 1px solid rgba(216,180,106,0.25); }
 .r-notready   { background: transparent;             color: var(--text3);  border: 1px solid var(--border); }
 
 /* ── Minervini comments ───────────────────────────────────────── */
 .modal-comments {
   padding: 16px 28px;
   border-top: 1px solid var(--border);
-  background: rgba(201,168,76,0.025);
+  background: rgba(219,188,129,0.025);
 }
 .comments-label {
   font-size: 10px; font-weight: 700; color: var(--gold);
@@ -436,7 +449,9 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
   .modal-content { padding: 20px 16px; }
 }
 @media (max-width: 480px) {
-  .summary-grid { grid-template-columns: 1fr; }
+  .summary-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .summary-card { padding: 14px 16px; }
+  .summary-value { font-size: 24px; }
   .modal-fundamentals { grid-template-columns: 1fr 1fr; }
   .tp-grid { grid-template-columns: 1fr; }
   .tp-grid > *:first-child { display: none; }
@@ -489,32 +504,41 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
     </div>
   </div>
 
+  <div class="section-head">
+  <div class="section-title">Stocks</div>
   <div class="filter-bar">
     <button class="filter-btn active" data-filter="all">All Stocks<span class="count"></span></button>
     <button class="filter-btn" data-filter="buylist">Buy List<span class="count"></span></button>
     <button class="filter-btn" data-filter="watch">Watchlist<span class="count"></span></button>
     <button class="filter-btn" data-filter="stage2">Stage 2 Leaders<span class="count"></span></button>
   </div>
+  </div>
 
   <div class="table-wrap">
     <table id="main-table">
       <thead>
         <tr>
-          <th data-col="ticker">Ticker <span class="sort-arrow">↕</span></th>
-          <th data-col="price">Price <span class="sort-arrow">↕</span></th>
-          <th data-col="verdict" class="sorted">Verdict <span class="sort-arrow">↓</span></th>
-          <th data-col="score">Template <span class="sort-arrow">↕</span></th>
-          <th data-col="rs_rank">RS <span class="sort-arrow">↕</span></th>
-          <th data-col="eps">EPS Gr <span class="sort-arrow">↕</span></th>
-          <th data-col="sales">Sales Gr <span class="sort-arrow">↕</span></th>
-          <th data-col="vcp">Base <span class="sort-arrow">↕</span></th>
-          <th data-col="pivot">Pivot <span class="sort-arrow">↕</span></th>
-          <th data-col="pvp">vs Pivot <span class="sort-arrow">↕</span></th>
-          <th data-col="vol_pct">Vol vs Avg <span class="sort-arrow">↕</span></th>
+          <th rowspan="2" data-col="ticker">Ticker <span class="sort-arrow">▼</span></th>
+          <th rowspan="2" data-col="company">Company <span class="sort-arrow">▼</span></th>
+          <th rowspan="2" data-col="price">Price <span class="sort-arrow">▼</span></th>
+          <th rowspan="2" data-col="verdict" class="sorted">Verdict <span class="sort-arrow">▼</span></th>
+          <th colspan="2" class="grp grp-start">Trend</th>
+          <th colspan="2" class="grp grp-start">Growth (Qtr YoY)</th>
+          <th colspan="3" class="grp grp-start">VCP Base</th>
+          <th rowspan="2" data-col="vol_pct" class="grp-start">Vol vs Avg <span class="sort-arrow">▼</span></th>
+        </tr>
+        <tr>
+          <th data-col="score" class="grp-start">Template <span class="sort-arrow">▼</span></th>
+          <th data-col="rs_rank">RS <span class="sort-arrow">▼</span></th>
+          <th data-col="eps" class="grp-start">EPS <span class="sort-arrow">▼</span></th>
+          <th data-col="sales">Sales <span class="sort-arrow">▼</span></th>
+          <th data-col="vcp" class="grp-start">Base <span class="sort-arrow">▼</span></th>
+          <th data-col="pivot">Pivot <span class="sort-arrow">▼</span></th>
+          <th data-col="pvp">vs Pivot <span class="sort-arrow">▼</span></th>
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr><td colspan="11" class="empty-state">Run <strong>python3 swing_scanner.py</strong> to load data.</td></tr>
+        <tr><td colspan="12" class="empty-state">Run <strong>python3 swing_scanner.py</strong> to load data.</td></tr>
       </tbody>
     </table>
   </div>
@@ -559,14 +583,14 @@ td { padding: 13px 14px; font-size: 13px; vertical-align: middle; }
 
     <div class="modal-chart-section">
       <div class="chart-labels">
-        <div class="chart-label-item"><div class="chart-label-line" style="background:#EDE5CC"></div>Price</div>
-        <div class="chart-label-item"><div class="chart-label-line" style="background:#C9A84C"></div>MA50</div>
-        <div class="chart-label-item"><div class="chart-label-line" style="background:#9B6FD5"></div>MA150</div>
-        <div class="chart-label-item"><div class="chart-label-line" style="background:#5BBFB5"></div>MA200</div>
-        <div class="chart-label-item"><div class="chart-label-line" style="border-top:2px dashed #C9A84C;background:transparent"></div>Pivot</div>
-        <div class="chart-label-item"><div class="chart-label-line" style="border-top:2px dashed #3DAD72;background:transparent"></div>Buy limit</div>
-        <div class="chart-label-item"><div class="chart-label-line" style="border-top:2px dashed #D95555;background:transparent"></div>Stop</div>
-        <div class="chart-label-item"><span style="color:#E5C455;font-size:13px">▼</span>Contraction high</div>
+        <div class="chart-label-item"><div class="chart-label-line" style="background:#ece0ee"></div>Price</div>
+        <div class="chart-label-item"><div class="chart-label-line" style="background:#dbbc81"></div>MA50</div>
+        <div class="chart-label-item"><div class="chart-label-line" style="background:#a98bc9"></div>MA150</div>
+        <div class="chart-label-item"><div class="chart-label-line" style="background:#6fa6a8"></div>MA200</div>
+        <div class="chart-label-item"><div class="chart-label-line" style="border-top:2px dashed #dbbc81;background:transparent"></div>Pivot</div>
+        <div class="chart-label-item"><div class="chart-label-line" style="border-top:2px dashed #6da996;background:transparent"></div>Buy limit</div>
+        <div class="chart-label-item"><div class="chart-label-line" style="border-top:2px dashed #c27272;background:transparent"></div>Stop</div>
+        <div class="chart-label-item"><span style="color:#d8b46a;font-size:13px">▼</span>Contraction high</div>
       </div>
       <div class="chart-wrap">
         <canvas id="detail-chart"></canvas>
@@ -626,7 +650,7 @@ function init() {
   bindModal();
   if (!SWING_DATA || SWING_DATA.schema !== 2 || !SWING_DATA.stocks) {
     document.getElementById("table-body").innerHTML =
-      `<tr><td colspan="11" class="empty-state">This data was produced by an older scanner version.<br>
+      `<tr><td colspan="12" class="empty-state">This data was produced by an older scanner version.<br>
        It refreshes on the next scheduled scan, or run the <strong>Update Swing Dashboard</strong> workflow now.</td></tr>`;
     return;
   }
@@ -679,6 +703,7 @@ function getSortVal(s, col) {
   const vcp = s.vcp || {}, f = s.fundamentals || {};
   switch (col) {
     case "ticker":  return s.ticker;
+    case "company": return s.company_name || "";
     case "price":   return s.price;
     case "verdict": return s.verdict.rank * 1000 + s.score * 100 + (s.rs_rank ?? 0);
     case "score":   return s.score * 100 + (s.rs_rank ?? 0);
@@ -700,7 +725,7 @@ function render() {
     const msg = currentFilter === "buylist"
       ? "Nothing meets Minervini's buy criteria right now. Check the Watchlist for stocks that are close."
       : "No stocks match this filter.";
-    tbody.innerHTML = `<tr><td colspan="11" class="empty-state">${msg}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="empty-state">${msg}</td></tr>`;
     return;
   }
   tbody.innerHTML = arr.map(rowHtml).join("");
@@ -764,20 +789,18 @@ function rowHtml(s) {
   const scls = s.score === 8 ? "s8" : s.score >= 6 ? "s6" : "slow";
 
   return `<tr data-ticker="${s.ticker}">
-    <td><div class="ticker-cell">
-      <div class="ticker-sym">${s.ticker}${s.growth_company ? '<span class="growth-star" title="Growth Company">★</span>' : ''}</div>
-      <div class="ticker-co">${esc(s.company_name)}</div>
-    </div></td>
+    <td><div class="ticker-sym">${s.ticker}${s.growth_company ? '<span class="growth-star" title="Growth Company">★</span>' : ''}</div></td>
+    <td class="company-cell">${esc(s.company_name)}</td>
     <td><span class="price-val">$${fmt(s.price)}</span></td>
     <td>${verdictBadge(s.verdict)}</td>
-    <td><span class="score-num ${scls}" style="font-size:15px">${s.score}/8</span></td>
+    <td class="grp-start"><span class="score-num ${scls}" style="font-size:15px">${s.score}/8</span></td>
     <td>${rsR !== null ? `<span class="${rsCls}">${rsR}</span>` : "—"}</td>
-    <td>${growthCell(f.eps_growth, 20)}</td>
+    <td class="grp-start">${growthCell(f.eps_growth, 20)}</td>
     <td>${growthCell(f.revenue_growth, 15)}</td>
-    <td>${vcpCell(vcp)}</td>
+    <td class="grp-start">${vcpCell(vcp)}</td>
     <td>${vcp.pivot_price ? `$${fmt(vcp.pivot_price)}` : "—"}</td>
     <td>${pvpCell(vcp)}</td>
-    <td>${vp !== null && vp !== undefined
+    <td class="grp-start">${vp !== null && vp !== undefined
       ? `<span class="${vp >= 40 ? "rs-high" : vp >= 0 ? "rs-mid" : "rs-low"}">${signedPct(vp, 0)}</span>`
       : "—"}</td>
   </tr>`;
@@ -802,10 +825,10 @@ function bindSort() {
       sortCol = col;
       document.querySelectorAll("th").forEach(t => {
         t.classList.remove("sorted");
-        const a = t.querySelector(".sort-arrow"); if (a) a.textContent = "↕";
+        const a = t.querySelector(".sort-arrow"); if (a) a.textContent = "▼";
       });
       th.classList.add("sorted");
-      th.querySelector(".sort-arrow").textContent = sortAsc ? "↑" : "↓";
+      th.querySelector(".sort-arrow").textContent = sortAsc ? "▲" : "▼";
       render();
     });
   });
@@ -1050,11 +1073,11 @@ function buildChart(s, hist, vcp) {
     data: {
       labels: dates,
       datasets: [
-        { label: "Price", data: closes, borderColor: "#EDE5CC", borderWidth: 1.5, pointRadius: 0, tension: 0.1, fill: false, order: 1 },
-        { label: "MA50",  data: ma50,  borderColor: "#C9A84C", borderWidth: 1.5, pointRadius: 0, tension: 0, fill: false, spanGaps: false, order: 2 },
-        { label: "MA150", data: ma150, borderColor: "#9B6FD5", borderWidth: 1.5, pointRadius: 0, tension: 0, fill: false, spanGaps: false, order: 3 },
-        { label: "MA200", data: ma200, borderColor: "#5BBFB5", borderWidth: 1.5, pointRadius: 0, tension: 0, fill: false, spanGaps: false, order: 4 },
-        { label: "Contraction highs", type: "scatter", data: swingPoints, backgroundColor: "#E5C455",
+        { label: "Price", data: closes, borderColor: "#ece0ee", borderWidth: 1.5, pointRadius: 0, tension: 0.1, fill: false, order: 1 },
+        { label: "MA50",  data: ma50,  borderColor: "#dbbc81", borderWidth: 1.5, pointRadius: 0, tension: 0, fill: false, spanGaps: false, order: 2 },
+        { label: "MA150", data: ma150, borderColor: "#a98bc9", borderWidth: 1.5, pointRadius: 0, tension: 0, fill: false, spanGaps: false, order: 3 },
+        { label: "MA200", data: ma200, borderColor: "#6fa6a8", borderWidth: 1.5, pointRadius: 0, tension: 0, fill: false, spanGaps: false, order: 4 },
+        { label: "Contraction highs", type: "scatter", data: swingPoints, backgroundColor: "#d8b46a",
           pointStyle: "triangle", rotation: 180, pointRadius: 7, order: 0 },
       ],
     },
@@ -1066,11 +1089,11 @@ function buildChart(s, hist, vcp) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#181a3a",
-          borderColor: "#232760",
+          backgroundColor: "#2f1535",
+          borderColor: "#3d2444",
           borderWidth: 1,
-          titleColor: "#B8A878",
-          bodyColor: "#EDE5CC",
+          titleColor: "#c4b3c8",
+          bodyColor: "#ece0ee",
           padding: 10,
           callbacks: {
             title: items => items[0]?.label || "",
@@ -1082,17 +1105,17 @@ function buildChart(s, hist, vcp) {
         },
         hLine: {
           lines: [
-            vcp.pivot_price ? { y: vcp.pivot_price, color: "#C9A84C", dash: true, label: `Pivot $${fmt(vcp.pivot_price)}` } : null,
-            s.trade ? { y: s.trade.buy_limit, color: "#3DAD72", dash: true, label: `Buy limit $${fmt(s.trade.buy_limit)}` } : null,
-            s.trade ? { y: s.trade.stop, color: "#D95555", dash: true, label: `Stop $${fmt(s.trade.stop)}` } : null,
+            vcp.pivot_price ? { y: vcp.pivot_price, color: "#dbbc81", dash: true, label: `Pivot $${fmt(vcp.pivot_price)}` } : null,
+            s.trade ? { y: s.trade.buy_limit, color: "#6da996", dash: true, label: `Buy limit $${fmt(s.trade.buy_limit)}` } : null,
+            s.trade ? { y: s.trade.stop, color: "#c27272", dash: true, label: `Stop $${fmt(s.trade.stop)}` } : null,
           ].filter(Boolean),
         },
       },
       scales: {
         x: {
-          grid:  { color: "#1A1D4A" },
+          grid:  { color: "#2f1834" },
           ticks: {
-            color: "#7A6A50",
+            color: "#857588",
             maxTicksLimit: 10,
             font: { size: 10 },
             callback(val) {
@@ -1103,8 +1126,8 @@ function buildChart(s, hist, vcp) {
         },
         y: {
           position: "right",
-          grid:  { color: "#1A1D4A" },
-          ticks: { color: "#B8A878", font: { size: 10 }, callback: v => `$${v.toFixed(0)}` },
+          grid:  { color: "#2f1834" },
+          ticks: { color: "#c4b3c8", font: { size: 10 }, callback: v => `$${v.toFixed(0)}` },
         },
       },
     },
@@ -1113,7 +1136,7 @@ function buildChart(s, hist, vcp) {
   /* Volume chart */
   const positiveVols = volumes.filter(v => v > 0);
   const maxVol    = positiveVols.length > 0 ? Math.max(...positiveVols) : 1;
-  const volColors = volumes.map(v => v > (maxVol * 0.7) ? "rgba(201,168,76,0.5)" : "rgba(201,168,76,0.2)");
+  const volColors = volumes.map(v => v > (maxVol * 0.7) ? "rgba(219,188,129,0.5)" : "rgba(219,188,129,0.2)");
 
   const volCtx = document.getElementById("vol-chart").getContext("2d");
   volChart = new Chart(volCtx, {
@@ -1127,9 +1150,9 @@ function buildChart(s, hist, vcp) {
       scales: {
         x: { grid: { display: false }, ticks: { display: false } },
         y: {
-          grid:  { color: "#1A1D4A" },
+          grid:  { color: "#2f1834" },
           ticks: {
-            color: "#7A6A50", font: { size: 9 }, maxTicksLimit: 3,
+            color: "#857588", font: { size: 9 }, maxTicksLimit: 3,
             callback: v => v >= 1e6 ? `${(v / 1e6).toFixed(0)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(0)}K` : v,
           },
         },
